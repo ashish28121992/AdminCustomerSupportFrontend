@@ -1,6 +1,6 @@
 import React from 'react';
 
-function BranchesTable({ branches, page, totalPages, onPageChange, query, onQueryChange, onDelete }) {
+function BranchesTable({ branches, page, totalPages, onPageChange, query, onQueryChange, onDelete, onEdit }) {
   return (
     <section className="tables-grid">
       <div className="panel table-panel animate-in">
@@ -27,12 +27,15 @@ function BranchesTable({ branches, page, totalPages, onPageChange, query, onQuer
                   <td className="name-cell"><div className="avatar tiny" /><span>{branch.branchName}</span></td>
                   <td>
                     {branch.waLink ? (
-                      <a className="link" href={branch.waLink} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                      <a className="link" href={branch.waLink} target="_blank" rel="noopener noreferrer">{branch.waLink}</a>
                     ) : (
                       <span className="muted">—</span>
                     )}
                   </td>
-                  <td><button className="btn-danger" onClick={() => onDelete(branch.id || idx)}>Delete</button></td>
+                  <td>
+                    <button className="ghost" onClick={() => onEdit(branch)}>Edit</button>
+                    <button className="btn-danger" onClick={() => onDelete(branch.id || idx)} style={{ marginLeft: 8 }}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

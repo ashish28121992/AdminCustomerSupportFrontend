@@ -26,6 +26,7 @@ function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error,
             <span>Branch ID</span>
             <input type="text" placeholder="ROOT-BRANCH" value={values.branchId} onChange={(e) => onChange('branchId', e.target.value)} />
           </label>
+        
           {error ? <div className="error-text" style={{ marginTop: 6 }}>{error}</div> : null}
           <div className="modal-actions">
             <button type="button" className="ghost" onClick={onClose} disabled={submitting}>Cancel</button>

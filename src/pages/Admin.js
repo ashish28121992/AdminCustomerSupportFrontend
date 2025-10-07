@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { postJson } from '../utils/api';
+import { postJson, getJson, deleteJson, putJson } from '../utils/api';
 import { getToken } from '../utils/auth';
 import Header from '../components/admin/Header';
 import Sidebar from '../components/admin/Sidebar';
@@ -24,6 +24,8 @@ function Admin() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreatingSub, setIsCreatingSub] = useState(false);
   const [isAddBranchOpen, setIsAddBranchOpen] = useState(false);
+  const [isEditBranchOpen, setIsEditBranchOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState(null);
   // Sub-admin form state
   const [newSubEmail, setNewSubEmail] = useState('');
   const [newSubPassword, setNewSubPassword] = useState('');
@@ -43,9 +45,8 @@ function Admin() {
   const [branchError, setBranchError] = useState('');
   
   // Branches state
-  const [branches, setBranches] = useState([
-    { id: 1, branchId: 'ROOT-BRANCH', branchName: 'Root Branch', waLink: 'https://wa.me/9000000000' },
-  ]);
+  const [branches, setBranches] = useState([]);
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   
   const pageSize = 5;
   const users = [
@@ -55,11 +56,7 @@ function Admin() {
     { id: 'USR-3204', name: 'Rahul Jain', email: 'rahul@example.com', role: 'User', status: 'Blocked', subAdmin: 'Riya Kapoor' },
   ];
 
-  const [adminSummary, setAdminSummary] = useState([
-    { admin: 'Super Admin', email: 'admin@company.com', subAdmins: 6, lastCreated: '2d ago' },
-    { admin: 'Aditi Mehta', email: 'aditi@company.com', subAdmins: 2, lastCreated: '5h ago' },
-    { admin: 'Karan Khanna', email: 'karan@company.com', subAdmins: 4, lastCreated: '1d ago' },
-  ]);
+  const [subAdmins, setSubAdmins] = useState([]);
 
   const normalized = (s) => s.toLowerCase();
   const usersFiltered = users.filter((u) => {
@@ -74,13 +71,17 @@ function Admin() {
       normalized(u.subAdmin).includes(q)
     );
   });
-  const subsFiltered = adminSummary.filter((a) => {
+  const subsFiltered = subAdmins.filter((a) => {
     const q = normalized(subsQuery);
     if (!q) return true;
     return (
-      normalized(a.admin).includes(q) ||
-      normalized(a.email).includes(q) ||
-      normalized(a.lastCreated).includes(q)
+      normalized(a.admin || '').includes(q) ||
+      normalized(a.branchName || '').includes(q) ||
+      normalized(a.email || '').includes(q) ||
+      normalized(a.userId || '').includes(q) ||
+      normalized(String(a.isActive)).includes(q) ||
+      normalized(a.branchWaLink || '').includes(q) ||
+      normalized(a.createdAt || a.lastCreated || '').includes(q)
     );
   });
   
@@ -88,11 +89,9 @@ function Admin() {
     const q = normalized(branchesQuery);
     if (!q) return true;
     return (
-      normalized(b.name).includes(q) ||
-      normalized(b.location).includes(q) ||
-      normalized(b.contactPerson || '').includes(q) ||
-      normalized(b.phone || '').includes(q) ||
-      normalized(b.email || '').includes(q)
+      normalized(b.branchId || '').includes(q) ||
+      normalized(b.branchName || '').includes(q) ||
+      normalized(b.waLink || '').includes(q)
     );
   });
 
@@ -149,13 +148,11 @@ function Admin() {
       if (res?.success && res?.data) {
         // Reflect in UI list (prepend a lightweight row)
         const newRow = {
-          admin: res.data.email,
+          admin: (res.data.branch && res.data.branch.branchName) || res?.data?.branchName || '—',
           email: res.data.email,
-          subAdmins: 0,
           lastCreated: 'just now',
-          waLink: res.data.branchWaLink || newWaLink.trim(),
         };
-        setAdminSummary((prev) => [newRow, ...prev]);
+        setSubAdmins((prev) => [newRow, ...prev]);
         toast.success('Sub-admin created');
         setIsCreateOpen(false);
         setNewSubEmail('');
@@ -213,6 +210,47 @@ function Admin() {
     }
   }
 
+  // Fetch branches from API
+  React.useEffect(() => {
+    (async () => {
+      try {
+        setIsLoadingBranches(true);
+        const token = getToken();
+        const res = await getJson('/branches', { headers: { Authorization: `Bearer ${token}` } });
+        const items = res?.data?.items || [];
+        setBranches(items.map((it) => ({ id: it._id, branchId: it.branchId, branchName: it.branchName, waLink: it.waLink })));
+      } catch (err) {
+        // non-blocking
+      } finally {
+        setIsLoadingBranches(false);
+      }
+    })();
+  }, []);
+
+  // Fetch sub-admins from API
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const token = getToken();
+        const res = await getJson('/admins?page=1&limit=10', { headers: { Authorization: `Bearer ${token}` } });
+        const items = res?.data?.items || [];
+        const mapped = items.map((it) => ({
+          id: it.id || it._id,
+          admin: (it.branch && it.branch.branchName) || '—',
+          branchName: (it.branch && it.branch.branchName) || (it.branchSnapshot && it.branchSnapshot.name) || '—',
+          email: it.email,
+          userId: it.userId || '',
+          isActive: Boolean(it.isActive),
+          branchWaLink: (it.branchSnapshot && it.branchSnapshot.waLink) || (it.branch && it.branch.waLink) || '',
+          createdAt: it.createdAt,
+        }));
+        setSubAdmins(mapped);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
   return (
     <div className="admin-page">
       <div className="admin-gradient" />
@@ -250,7 +288,16 @@ function Admin() {
               onPageChange={(p) => setSubsPage(Math.min(Math.max(1, p), subsTotalPages))}
               query={subsQuery}
               onQueryChange={(q) => { setSubsQuery(q); setSubsPage(1); }}
-              onDelete={() => {}}
+              onDelete={async (id) => {
+                try {
+                  const token = getToken();
+                  await deleteJson(`/admins/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                  setSubAdmins(prev => prev.filter(s => s.id !== id));
+                  toast.success('Sub-admin deleted');
+                } catch (e) {
+                  toast.error(e?.message || 'Delete failed');
+                }
+              }}
             />
           ) : null}
 
@@ -262,7 +309,17 @@ function Admin() {
               onPageChange={(p) => setBranchesPage(Math.min(Math.max(1, p), branchesTotalPages))}
               query={branchesQuery}
               onQueryChange={(q) => { setBranchesQuery(q); setBranchesPage(1); }}
-              onDelete={(id) => setBranches(prev => prev.filter(b => b.id !== id))}
+              onDelete={async (id) => {
+                try {
+                  const token = getToken();
+                  await deleteJson(`/branches/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                  setBranches(prev => prev.filter(b => b.id !== id));
+                  toast.success('Deleted');
+                } catch (e) {
+                  toast.error(e?.message || 'Delete failed');
+                }
+              }}
+              onEdit={(branch) => { setEditingBranch(branch); setIsEditBranchOpen(true); }}
             />
           ) : null}
           </main>
@@ -306,6 +363,53 @@ function Admin() {
         error={branchError}
         submitting={false}
       />
+
+      {isEditBranchOpen ? (
+        <div className="modal-backdrop" onClick={() => setIsEditBranchOpen(false)}>
+          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Branch</h3>
+              <button className="ghost" onClick={() => setIsEditBranchOpen(false)}>Close</button>
+            </div>
+            <form className="modal-body" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!editingBranch) return;
+              try {
+                const token = getToken();
+                const payload = {
+                  branchId: editingBranch.branchId,
+                  branchName: editingBranch.branchName,
+                  waLink: editingBranch.waLink || '',
+                };
+                const res = await putJson(`/branches/${editingBranch.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+                // optimistic update
+                setBranches(prev => prev.map(b => b.id === editingBranch.id ? { ...b, ...payload } : b));
+                toast.success('Branch updated');
+                setIsEditBranchOpen(false);
+              } catch (err) {
+                toast.error(err?.message || 'Update failed');
+              }
+            }}>
+              <label>
+                <span>Branch ID</span>
+                <input type="text" value={editingBranch?.branchId || ''} onChange={(e) => setEditingBranch(prev => ({ ...prev, branchId: e.target.value }))} />
+              </label>
+              <label>
+                <span>Branch Name</span>
+                <input type="text" value={editingBranch?.branchName || ''} onChange={(e) => setEditingBranch(prev => ({ ...prev, branchName: e.target.value }))} />
+              </label>
+              <label>
+                <span>WhatsApp Link</span>
+                <input type="url" value={editingBranch?.waLink || ''} onChange={(e) => setEditingBranch(prev => ({ ...prev, waLink: e.target.value }))} />
+              </label>
+              <div className="modal-actions">
+                <button type="button" className="ghost" onClick={() => setIsEditBranchOpen(false)}>Cancel</button>
+                <button type="submit" className="primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

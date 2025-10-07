@@ -14,30 +14,34 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
           <table className="table compact">
             <thead>
               <tr>
-                <th>Admin</th>
+                <th>Branch Id</th>
                 <th>Email</th>
-                <th>WA</th>
-                <th>Last Created</th>
+                <th>Sub Admin ID</th>
+                <th>Status</th>
+                <th>Branch WA</th>
+                <th>Created At</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {subs.map((a, idx) => (
-                <tr key={a.email} style={{ animationDelay: `${idx * 70}ms` }}>
+                <tr key={a.id || a.email} style={{ animationDelay: `${idx * 70}ms` }}>
                   <td className="name-cell">
                     <div className="avatar tiny" />
-                    <span>{a.admin}</span>
+                    <span>{a.branchName || a.admin}</span>
                   </td>
                   <td className="muted">{a.email}</td>
+                  <td className="muted">{a.userId || '—'}</td>
+                  <td className="muted">{a.isActive ? 'Active' : 'Inactive'}</td>
                   <td>
-                    {a.waLink ? (
-                      <a className="link" href={a.waLink} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                    {a.branchWaLink ? (
+                      <a className="link" href={a.branchWaLink} target="_blank" rel="noopener noreferrer">{a.branchWaLink}</a>
                     ) : (
                       <span className="muted">—</span>
                     )}
                   </td>
-                  <td className="muted">{a.lastCreated}</td>
-                  <td><button className="btn-danger" onClick={() => onDelete(a.email)}>Delete</button></td>
+                  <td className="muted">{a.createdAt || a.lastCreated}</td>
+                  <td><button className="btn-danger" onClick={() => onDelete(a.id)}>Delete</button></td>
                 </tr>
               ))}
             </tbody>

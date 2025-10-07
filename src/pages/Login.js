@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postJson } from '../utils/api';
-import { saveToken, saveUserRole } from '../utils/auth';
+import { saveToken, saveUserRole, saveUser } from '../utils/auth';
 import toast from 'react-hot-toast';
 import './Login.css';
 
@@ -39,8 +39,10 @@ function Login() {
       const res = await postJson('/auth/login', { email, password });
       if (res?.success && res?.data?.accessToken) {
         saveToken(res.data.accessToken);
-        const role = res?.data?.user?.role || '';
+        const user = res?.data?.user || {};
+        const role = user?.role || '';
         saveUserRole(role);
+        saveUser(user);
         toast.success('Login successful');
         if (role === 'sub') {
           navigate('/subadmin', { replace: true });
