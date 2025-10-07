@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { postJson } from '../utils/api';
+import { getToken } from '../utils/auth';
 import Header from '../components/admin/Header';
 import Sidebar from '../components/admin/Sidebar';
 import UsersTable from '../components/admin/UsersTable';
@@ -7,6 +9,7 @@ import SubAdminsTable from '../components/admin/SubAdminsTable';
 import BranchesTable from '../components/admin/BranchesTable';
 import CreateSubAdminModal from '../components/admin/CreateSubAdminModal';
 import AddBranchModal from '../components/admin/AddBranchModal';
+import toast from 'react-hot-toast';
 import './Admin.css';
 
 function Admin() {
@@ -19,29 +22,29 @@ function Admin() {
   const [subsQuery, setSubsQuery] = useState('');
   const [branchesQuery, setBranchesQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreatingSub, setIsCreatingSub] = useState(false);
   const [isAddBranchOpen, setIsAddBranchOpen] = useState(false);
-  const [newSubName, setNewSubName] = useState('');
+  // Sub-admin form state
   const [newSubEmail, setNewSubEmail] = useState('');
+  const [newSubPassword, setNewSubPassword] = useState('');
+  const [newSubUserId, setNewSubUserId] = useState('');
+  const [newSubBranchId, setNewSubBranchId] = useState('');
+  const [newSubIsActive, setNewSubIsActive] = useState(true);
   const [newWaLink, setNewWaLink] = useState('');
-  const [newCreatedBy, setNewCreatedBy] = useState('Super Admin');
+  const [permUsersRead, setPermUsersRead] = useState(true);
   const [formError, setFormError] = useState('');
   
   // Branch form state
   const [branchForm, setBranchForm] = useState({
-    name: '',
-    location: '',
-    contactPerson: '',
-    phone: '',
-    waLink: '',
-    email: '',
-    address: ''
+    branchId: '',
+    branchName: '',
+    waLink: ''
   });
   const [branchError, setBranchError] = useState('');
   
   // Branches state
   const [branches, setBranches] = useState([
-    { id: 1, name: 'Mumbai Branch', location: 'Andheri, Mumbai', contactPerson: 'Rajesh Kumar', phone: '+91 9876543210', waLink: 'https://wa.me/919876543210', email: 'mumbai@company.com' },
-    { id: 2, name: 'Delhi Branch', location: 'Connaught Place, Delhi', contactPerson: 'Priya Sharma', phone: '+91 9876543211', waLink: 'https://wa.me/919876543211', email: 'delhi@company.com' },
+    { id: 1, branchId: 'ROOT-BRANCH', branchName: 'Root Branch', waLink: 'https://wa.me/9000000000' },
   ]);
   
   const pageSize = 5;
@@ -103,74 +106,111 @@ function Admin() {
   const pagedSubs = subsFiltered.slice(subsStartIdx, subsStartIdx + pageSize);
   const pagedBranches = branchesFiltered.slice(branchesStartIdx, branchesStartIdx + pageSize);
 
-  function handleCreateSubAdmin(e) {
+  async function handleCreateSubAdmin(e) {
     e.preventDefault();
     setFormError('');
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!newSubName.trim()) {
-      setFormError('Name is required');
-      return;
-    }
     if (!emailRegex.test(newSubEmail)) {
       setFormError('Valid email is required');
       return;
     }
-    const next = [
-      { admin: newSubName.trim(), email: newSubEmail.trim(), subAdmins: 0, lastCreated: 'just now', waLink: newWaLink.trim() },
-      ...adminSummary,
-    ];
-    setAdminSummary(next);
-    setIsCreateOpen(false);
-    setNewSubName('');
-    setNewSubEmail('');
-    setNewWaLink('');
-    setNewCreatedBy('Super Admin');
-    setSubsPage(1);
-    setSection('subs');
+    if (!newSubPassword || newSubPassword.length < 8) {
+      setFormError('Password must be at least 8 characters');
+      return;
+    }
+    if (!newSubUserId.trim()) {
+      setFormError('User ID is required');
+      return;
+    }
+    const branchIdToUse = newSubBranchId.trim() || 'ROOT-BRANCH';
+
+    const permissions = [];
+    if (permUsersRead) {
+      permissions.push({ resource: 'users', actions: ['read'] });
+    }
+
+    try {
+      setIsCreatingSub(true);
+      const token = getToken();
+      const payload = {
+        email: newSubEmail.trim(),
+        password: newSubPassword,
+        userId: newSubUserId.trim(),
+        branchId: branchIdToUse,
+        isActive: Boolean(newSubIsActive),
+        permissions,
+      };
+      // Debug: verify payload
+      console.log('POST /admins payload', payload);
+      const res = await postJson('/admins', payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res?.success && res?.data) {
+        // Reflect in UI list (prepend a lightweight row)
+        const newRow = {
+          admin: res.data.email,
+          email: res.data.email,
+          subAdmins: 0,
+          lastCreated: 'just now',
+          waLink: res.data.branchWaLink || newWaLink.trim(),
+        };
+        setAdminSummary((prev) => [newRow, ...prev]);
+        toast.success('Sub-admin created');
+        setIsCreateOpen(false);
+        setNewSubEmail('');
+        setNewSubPassword('');
+        setNewSubUserId('');
+        setNewSubBranchId('');
+        setNewSubIsActive(true);
+        setPermUsersRead(true);
+        setNewWaLink('');
+        setSubsPage(1);
+        setSection('subs');
+        return;
+      }
+      const msg = res?.message || 'Failed to create sub-admin';
+      setFormError(msg);
+      toast.error(msg);
+    } catch (err) {
+      console.error('Create sub-admin error:', err);
+      const msg = err?.message || 'Network error';
+      setFormError(msg);
+      toast.error(msg);
+    } finally {
+      setIsCreatingSub(false);
+    }
   }
 
-  function handleAddBranch(e) {
+  async function handleAddBranch(e) {
     e.preventDefault();
     setBranchError('');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!branchForm.name.trim()) {
-      setBranchError('Branch name is required');
-      return;
+    if (!branchForm.branchId.trim()) { setBranchError('Branch ID is required'); return; }
+    if (!branchForm.branchName.trim()) { setBranchError('Branch name is required'); return; }
+    try {
+      const token = getToken();
+      const payload = {
+        branchId: branchForm.branchId.trim(),
+        branchName: branchForm.branchName.trim(),
+        waLink: branchForm.waLink.trim(),
+      };
+      const res = await postJson('/branches', payload, { headers: { Authorization: `Bearer ${token}` } });
+      if (res?.data) {
+        setBranches(prev => [{ id: res.data._id || Date.now(), branchId: res.data.branchId, branchName: res.data.branchName, waLink: res.data.waLink }, ...prev]);
+        toast.success('Branch created');
+        setIsAddBranchOpen(false);
+        setBranchForm({ branchId: '', branchName: '', waLink: '' });
+        setSection('branches');
+        return;
+      }
+      const msg = res?.message || 'Failed to create branch';
+      setBranchError(msg);
+      toast.error(msg);
+    } catch (err) {
+      const msg = err?.message || 'Network error';
+      setBranchError(msg);
+      toast.error(msg);
     }
-    if (!branchForm.location.trim()) {
-      setBranchError('Location is required');
-      return;
-    }
-    if (branchForm.email && !emailRegex.test(branchForm.email)) {
-      setBranchError('Valid email is required');
-      return;
-    }
-    
-    // Add to branches list
-    const newBranch = {
-      id: Date.now(),
-      ...branchForm,
-      name: branchForm.name.trim(),
-      location: branchForm.location.trim(),
-      contactPerson: branchForm.contactPerson.trim(),
-      phone: branchForm.phone.trim(),
-      waLink: branchForm.waLink.trim(),
-      email: branchForm.email.trim(),
-      address: branchForm.address.trim()
-    };
-    
-    setBranches(prev => [newBranch, ...prev]);
-    setIsAddBranchOpen(false);
-    setBranchForm({
-      name: '',
-      location: '',
-      contactPerson: '',
-      phone: '',
-      waLink: '',
-      email: '',
-      address: ''
-    });
-    setSection('branches'); // Switch to branches view
   }
 
   return (
@@ -233,13 +273,25 @@ function Admin() {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreate={handleCreateSubAdmin}
-        values={{ name: newSubName, email: newSubEmail, createdBy: newCreatedBy, waLink: newWaLink }}
-        onChange={(field, value) => {
-          if (field === 'name') setNewSubName(value);
-          if (field === 'email') setNewSubEmail(value);
-          if (field === 'waLink') setNewWaLink(value);
-          if (field === 'createdBy') setNewCreatedBy(value);
+        values={{
+          email: newSubEmail,
+          password: newSubPassword,
+          userId: newSubUserId,
+          branchId: newSubBranchId,
+          isActive: newSubIsActive,
+          waLink: newWaLink,
+          permissions: { users_read: permUsersRead },
         }}
+        onChange={(field, value) => {
+          if (field === 'email') setNewSubEmail(value);
+          if (field === 'password') setNewSubPassword(value);
+          if (field === 'userId') setNewSubUserId(value);
+          if (field === 'branchId') setNewSubBranchId(value);
+          if (field === 'isActive') setNewSubIsActive(Boolean(value));
+          if (field === 'waLink') setNewWaLink(value);
+          if (field === 'perm_users_read') setPermUsersRead(Boolean(value));
+        }}
+        submitting={isCreatingSub}
         error={formError}
       />
 
@@ -252,6 +304,7 @@ function Admin() {
           setBranchForm(prev => ({ ...prev, [field]: value }));
         }}
         error={branchError}
+        submitting={false}
       />
     </div>
   );

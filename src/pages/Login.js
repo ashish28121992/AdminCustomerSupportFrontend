@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { postJson } from '../utils/api';
+import { saveToken, saveUserRole } from '../utils/auth';
+import toast from 'react-hot-toast';
 import './Login.css';
 
 function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
 
   function validate() {
     const nextErrors = {};
@@ -28,11 +34,24 @@ function Login() {
     event.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
+    setApiError('');
     try {
-      // Simulate login API call
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      // For now, just show a success message
-      alert('Login successful');
+      const res = await postJson('/auth/login', { email, password });
+      if (res?.success && res?.data?.accessToken) {
+        saveToken(res.data.accessToken);
+        const role = res?.data?.user?.role || '';
+        saveUserRole(role);
+        toast.success('Login successful');
+        if (role === 'sub') {
+          navigate('/subadmin', { replace: true });
+        } else {
+          navigate('/admin', { replace: true });
+        }
+      } else {
+        const msg = res?.message || 'Login failed';
+        setApiError(msg);
+        toast.error(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -112,6 +131,7 @@ function Login() {
           <button className="submit" type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
+        {apiError ? <div className="error-text" style={{ marginTop: 8 }}>{apiError}</div> : null}
         </form>
 
           <div className="footer-text">

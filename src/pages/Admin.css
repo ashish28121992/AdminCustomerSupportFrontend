@@ -186,8 +186,15 @@
 .modal-body { display: grid; gap: 12px; padding: 14px 16px; }
 .modal-body label { display: grid; gap: 6px; }
 .modal-body input, .modal-body textarea { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(148,163,184,0.25); background: rgba(15,23,42,0.65); color: #e6e8f0; }
+/* (Placeholder styling moved to global index.css) */
 .modal-body textarea { resize: vertical; min-height: 80px; }
 .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+/* Logout confirm modal tweaks */
+.confirm-modal { max-width: 440px; background: linear-gradient(135deg, rgba(17,24,39,0.92), rgba(30,41,59,0.92)); border: 1px solid rgba(99,102,241,0.35); }
+.confirm-modal .modal-header h3 { background: linear-gradient(135deg, #22d3ee, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.colorful-cancel { border-color: rgba(99,102,241,0.45); color: #c7d2fe; }
+.colorful-logout { background: linear-gradient(135deg, #f43f5e, #fb7185); border-color: rgba(248,113,113,0.45); }
 
 @media (max-width: 480px) {
   .admin-header { padding: 12px 14px; }

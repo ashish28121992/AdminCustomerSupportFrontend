@@ -1,6 +1,6 @@
 import React from 'react';
 
-function AddBranchModal({ open, onClose, onCreate, values, onChange, error }) {
+function AddBranchModal({ open, onClose, onCreate, values, onChange, error, submitting }) {
   if (!open) return null;
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -11,37 +11,21 @@ function AddBranchModal({ open, onClose, onCreate, values, onChange, error }) {
         </div>
         <form className="modal-body" onSubmit={onCreate}>
           <label>
+            <span>Branch ID</span>
+            <input type="text" placeholder="dummy06" value={values.branchId} onChange={(e) => onChange('branchId', e.target.value)} />
+          </label>
+          <label>
             <span>Branch Name</span>
-            <input type="text" placeholder="e.g., Mumbai Branch" value={values.name} onChange={(e) => onChange('name', e.target.value)} />
-          </label>
-          <label>
-            <span>Location</span>
-            <input type="text" placeholder="e.g., Andheri, Mumbai" value={values.location} onChange={(e) => onChange('location', e.target.value)} />
-          </label>
-          <label>
-            <span>Contact Person</span>
-            <input type="text" placeholder="Branch Manager Name" value={values.contactPerson} onChange={(e) => onChange('contactPerson', e.target.value)} />
-          </label>
-          <label>
-            <span>Phone</span>
-            <input type="tel" placeholder="+91 xxxxxxxxxx" value={values.phone} onChange={(e) => onChange('phone', e.target.value)} />
+            <input type="text" placeholder="copper" value={values.branchName} onChange={(e) => onChange('branchName', e.target.value)} />
           </label>
           <label>
             <span>WhatsApp Link</span>
-            <input type="url" placeholder="https://wa.me/91xxxxxxxxxx" value={values.waLink || ''} onChange={(e) => onChange('waLink', e.target.value)} />
-          </label>
-          <label>
-            <span>Email</span>
-            <input type="email" placeholder="branch@company.com" value={values.email} onChange={(e) => onChange('email', e.target.value)} />
-          </label>
-          <label>
-            <span>Address</span>
-            <textarea placeholder="Full branch address" value={values.address} onChange={(e) => onChange('address', e.target.value)} rows="3" />
+            <input type="url" placeholder="https://wa.link/yourbranch" value={values.waLink || ''} onChange={(e) => onChange('waLink', e.target.value)} />
           </label>
           {error ? <div className="error-text" style={{ marginTop: 6 }}>{error}</div> : null}
           <div className="modal-actions">
-            <button type="button" className="ghost" onClick={onClose}>Cancel</button>
-            <button type="submit" className="primary">Add Branch</button>
+            <button type="button" className="ghost" onClick={onClose} disabled={submitting}>Cancel</button>
+            <button type="submit" className="primary" disabled={submitting}>{submitting ? 'Adding…' : 'Add Branch'}</button>
           </div>
         </form>
       </div>

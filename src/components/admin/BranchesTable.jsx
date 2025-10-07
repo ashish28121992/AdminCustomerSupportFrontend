@@ -14,25 +14,17 @@ function BranchesTable({ branches, page, totalPages, onPageChange, query, onQuer
           <table className="table">
             <thead>
               <tr>
+                <th>Branch ID</th>
                 <th>Branch Name</th>
-                <th>Location</th>
-                <th>Contact Person</th>
-                <th>Phone</th>
                 <th>WhatsApp</th>
-                <th>Email</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {branches.map((branch, idx) => (
                 <tr key={branch.id || idx} style={{ animationDelay: `${idx * 60}ms` }}>
-                  <td className="name-cell">
-                    <div className="avatar tiny" />
-                    <span>{branch.name}</span>
-                  </td>
-                  <td className="muted">{branch.location}</td>
-                  <td>{branch.contactPerson || '—'}</td>
-                  <td className="muted">{branch.phone || '—'}</td>
+                  <td className="muted">{branch.branchId}</td>
+                  <td className="name-cell"><div className="avatar tiny" /><span>{branch.branchName}</span></td>
                   <td>
                     {branch.waLink ? (
                       <a className="link" href={branch.waLink} target="_blank" rel="noopener noreferrer">WhatsApp</a>
@@ -40,7 +32,6 @@ function BranchesTable({ branches, page, totalPages, onPageChange, query, onQuer
                       <span className="muted">—</span>
                     )}
                   </td>
-                  <td className="muted">{branch.email || '—'}</td>
                   <td><button className="btn-danger" onClick={() => onDelete(branch.id || idx)}>Delete</button></td>
                 </tr>
               ))}

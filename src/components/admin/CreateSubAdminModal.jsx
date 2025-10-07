@@ -1,6 +1,6 @@
 import React from 'react';
 
-function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error }) {
+function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error, submitting }) {
   if (!open) return null;
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -11,25 +11,25 @@ function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error 
         </div>
         <form className="modal-body" onSubmit={onCreate}>
           <label>
-            <span>Name</span>
-            <input type="text" placeholder="Full name" value={values.name} onChange={(e) => onChange('name', e.target.value)} />
-          </label>
-          <label>
             <span>Email</span>
             <input type="email" placeholder="email@example.com" value={values.email} onChange={(e) => onChange('email', e.target.value)} />
           </label>
           <label>
-            <span>WA Link (optional)</span>
-            <input type="url" placeholder="https://wa.me/91xxxxxxxxxx" value={values.waLink || ''} onChange={(e) => onChange('waLink', e.target.value)} />
+            <span>Password</span>
+            <input type="password" placeholder="Strong password" value={values.password} onChange={(e) => onChange('password', e.target.value)} />
           </label>
           <label>
-            <span>Created By</span>
-            <input type="text" value={values.createdBy} onChange={(e) => onChange('createdBy', e.target.value)} />
+            <span>User ID</span>
+            <input type="text" placeholder="SUB-1001" value={values.userId} onChange={(e) => onChange('userId', e.target.value)} />
+          </label>
+          <label>
+            <span>Branch ID</span>
+            <input type="text" placeholder="ROOT-BRANCH" value={values.branchId} onChange={(e) => onChange('branchId', e.target.value)} />
           </label>
           {error ? <div className="error-text" style={{ marginTop: 6 }}>{error}</div> : null}
           <div className="modal-actions">
-            <button type="button" className="ghost" onClick={onClose}>Cancel</button>
-            <button type="submit" className="primary">Create</button>
+            <button type="button" className="ghost" onClick={onClose} disabled={submitting}>Cancel</button>
+            <button type="submit" className="primary" disabled={submitting}>{submitting ? 'Creating…' : 'Create'}</button>
           </div>
         </form>
       </div>
