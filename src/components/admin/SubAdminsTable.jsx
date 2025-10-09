@@ -14,7 +14,7 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
           <table className="table compact">
             <thead>
               <tr>
-                <th>Branch Id</th>
+                <th>Branch Name</th>
                 <th>Email</th>
                 <th>Sub Admin ID</th>
                 <th>Status</th>

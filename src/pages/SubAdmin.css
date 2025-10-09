@@ -1,0 +1,437 @@
+/* SubAdmin Welcome Section */
+.subadmin-welcome {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 2rem;
+}
+
+.welcome-card {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.08) 100%);
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  max-width: 100%;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.welcome-icon {
+  font-size: 2.5rem;
+  margin: 0;
+  animation: wave 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  75% { transform: rotate(-20deg); }
+}
+
+.welcome-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 0.25rem 0;
+  text-align: left;
+}
+
+.welcome-text {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.add-user-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.add-user-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.add-user-btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.welcome-card > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+}
+
+/* Add User Modal Specific Styles */
+.add-user-modal,
+.edit-client-modal {
+  max-width: 500px;
+}
+
+.add-user-modal .modal-body,
+.edit-client-modal .modal-body {
+  overflow-x: hidden;
+}
+
+.add-user-modal .modal-body label,
+.edit-client-modal .modal-body label {
+  margin-bottom: 1.5rem;
+  display: block;
+  width: 100%;
+}
+
+.add-user-modal .modal-body label span,
+.edit-client-modal .modal-body label span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #e6e8f0;
+  font-size: 0.9rem;
+}
+
+.add-user-modal .modal-body input,
+.edit-client-modal .modal-body input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  color: #e6e8f0;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.add-user-modal .modal-body input:focus,
+.edit-client-modal .modal-body input:focus {
+  outline: none;
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.checkbox-field {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer;
+}
+
+.checkbox-field span {
+  display: inline !important;
+  margin: 0 !important;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Clients Section */
+.clients-section {
+  padding: 0 2rem 2rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.section-header-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(99,102,241,0.2);
+}
+
+.section-title-compact {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.client-count {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  background: rgba(99,102,241,0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  background: rgba(99,102,241,0.03);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 12px;
+}
+
+.clients-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.clients-table thead {
+  background: rgba(99,102,241,0.08);
+}
+
+.clients-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #e6e8f0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(99,102,241,0.2);
+}
+
+.clients-table tbody tr {
+  border-bottom: 1px solid rgba(99,102,241,0.1);
+  transition: all 0.2s ease;
+}
+
+.clients-table tbody tr:hover {
+  background: rgba(99,102,241,0.05);
+}
+
+.clients-table td {
+  padding: 1rem;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.clients-table td.muted {
+  color: #94a3b8;
+}
+
+.client-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.client-avatar-small {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.client-name-text {
+  font-weight: 600;
+  color: #e6e8f0;
+}
+
+.status-badge-small {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.2);
+}
+
+.status-badge-small.active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+.status-badge-small.inactive {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.wa-link-small {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+}
+
+.wa-link-small:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.3rem;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.btn-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  color: #94a3b8;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(99,102,241,0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .welcome-card {
+    padding: 2rem;
+  }
+
+  .welcome-heading {
+    font-size: 2rem;
+  }
+
+  .welcome-text {
+    font-size: 1rem;
+  }
+
+  .add-user-btn {
+    padding: 0.875rem 2rem;
+    font-size: 1rem;
+  }
+
+  .clients-grid {
+    grid-template-columns: 1fr;
+  }
+}

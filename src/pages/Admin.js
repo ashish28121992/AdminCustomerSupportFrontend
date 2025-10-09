@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postJson, getJson, deleteJson, putJson } from '../utils/api';
 import { getToken } from '../utils/auth';
 import Header from '../components/admin/Header';
 import Sidebar from '../components/admin/Sidebar';
+import DashboardCards from '../components/admin/DashboardCards';
 import UsersTable from '../components/admin/UsersTable';
 import SubAdminsTable from '../components/admin/SubAdminsTable';
 import BranchesTable from '../components/admin/BranchesTable';
@@ -14,7 +15,7 @@ import './Admin.css';
 
 function Admin() {
   const navigate = useNavigate();
-  const [section, setSection] = useState('users');
+  const [section, setSection] = useState('dashboard');
   const [usersPage, setUsersPage] = useState(1);
   const [subsPage, setSubsPage] = useState(1);
   const [branchesPage, setBranchesPage] = useState(1);
@@ -57,18 +58,32 @@ function Admin() {
   ];
 
   const [subAdmins, setSubAdmins] = useState([]);
+  const [clientCounts, setClientCounts] = useState({}); // { subAdminId: count }
+  const [allClients, setAllClients] = useState([]); // All clients from API
+  const [totalClientsCount, setTotalClientsCount] = useState(0);
 
   const normalized = (s) => s.toLowerCase();
-  const usersFiltered = users.filter((u) => {
+  
+  // Map API clients to match UsersTable structure
+  const mappedClients = allClients.map(client => ({
+    id: client.userId || client.id,
+    name: client.name,
+    email: client.email,
+    role: 'Client',
+    status: client.isActive ? 'Active' : 'Inactive',
+    subAdmin: client.branchName || 'N/A'
+  }));
+
+  const usersFiltered = mappedClients.filter((u) => {
     const q = normalized(usersQuery);
     if (!q) return true;
     return (
-      normalized(u.id).includes(q) ||
-      normalized(u.name).includes(q) ||
-      normalized(u.email).includes(q) ||
-      normalized(u.role).includes(q) ||
-      normalized(u.status).includes(q) ||
-      normalized(u.subAdmin).includes(q)
+      normalized(u.id || '').includes(q) ||
+      normalized(u.name || '').includes(q) ||
+      normalized(u.email || '').includes(q) ||
+      normalized(u.role || '').includes(q) ||
+      normalized(u.status || '').includes(q) ||
+      normalized(u.subAdmin || '').includes(q)
     );
   });
   const subsFiltered = subAdmins.filter((a) => {
@@ -211,6 +226,7 @@ function Admin() {
   }
 
   // Fetch branches from API
+  // Fetch branches
   React.useEffect(() => {
     (async () => {
       try {
@@ -226,6 +242,40 @@ function Admin() {
       }
     })();
   }, []);
+
+  // Fetch all clients
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = getToken();
+        const res = await getJson('/clients', { headers: { Authorization: `Bearer ${token}` } });
+        const clients = res?.data?.items || [];
+        const total = res?.data?.pagination?.total || clients.length;
+        
+        // Store all clients and total count
+        setAllClients(clients);
+        setTotalClientsCount(total);
+      } catch (err) {
+        console.error('Error fetching clients:', err);
+      }
+    })();
+  }, []);
+
+  // Count clients per sub-admin whenever clients or subAdmins change
+  useEffect(() => {
+    if (allClients.length === 0 || subAdmins.length === 0) return;
+    
+    const counts = {};
+    subAdmins.forEach(subAdmin => {
+      const clientsForSubAdmin = allClients.filter(client => 
+        client.branchName === subAdmin.branchName || 
+        client.email === subAdmin.email
+      );
+      counts[subAdmin.id] = clientsForSubAdmin.length;
+    });
+    
+    setClientCounts(counts);
+  }, [allClients, subAdmins]);
 
   // Fetch sub-admins from API
   React.useEffect(() => {
@@ -268,7 +318,15 @@ function Admin() {
           />
 
           <main className="admin-content">
-          {section === 'users' ? (
+          {section === 'dashboard' ? (
+            <DashboardCards
+              usersCount={totalClientsCount}
+              subAdmins={subAdmins}
+              branchesCount={branches.length}
+              clientCounts={clientCounts}
+              onNavigate={setSection}
+            />
+          ) : section === 'users' ? (
             <UsersTable
               users={pagedUsers}
               page={usersPage}

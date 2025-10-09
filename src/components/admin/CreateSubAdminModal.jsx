@@ -19,7 +19,7 @@ function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error,
             <input type="password" placeholder="Strong password" value={values.password} onChange={(e) => onChange('password', e.target.value)} />
           </label>
           <label>
-            <span>User ID</span>
+            <span>Sub-Admin ID</span>
             <input type="text" placeholder="SUB-1001" value={values.userId} onChange={(e) => onChange('userId', e.target.value)} />
           </label>
           <label>

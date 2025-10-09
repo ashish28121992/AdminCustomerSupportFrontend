@@ -37,6 +37,9 @@ function Sidebar({ section, setSection, onCreateSubAdmin, onAddBranch, onLogout 
         <span>Admin Panel</span>
       </div>
       <nav className="sidebar-nav">
+        <button className={`nav-item ${section === 'dashboard' ? 'active' : ''}`} onClick={() => setSection('dashboard')}>
+          <span className="dot nav" /> Dashboard
+        </button>
         <button className={`nav-item ${section === 'users' ? 'active' : ''}`} onClick={() => setSection('users')}>
           <span className="dot nav" /> Users
         </button>

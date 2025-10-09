@@ -1,14 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getToken, clearToken } from '../utils/auth';
-import { postJson } from '../utils/api';
+import { postJson, getJson, putJson } from '../utils/api';
 import toast from 'react-hot-toast';
+import AddUserModal from '../components/subadmin/AddUserModal';
+import EditClientModal from '../components/subadmin/EditClientModal';
+import ClientsTable from '../components/subadmin/ClientsTable';
 import './Admin.css';
+import './SubAdmin.css';
 
 function SubAdmin() {
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [userForm, setUserForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    userId: ''
+  });
+  const [userError, setUserError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isEditClientOpen, setIsEditClientOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phone: '',
+    isActive: true
+  });
+  const [editError, setEditError] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   async function handleConfirmLogout() {
     try {
@@ -31,6 +57,111 @@ function SubAdmin() {
     }
   }
 
+  // Fetch clients
+  useEffect(() => {
+    fetchClients();
+  }, [currentPage]);
+
+  async function fetchClients() {
+    try {
+      setIsLoadingClients(true);
+      const token = getToken();
+      const response = await getJson(`/clients?page=${currentPage}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response?.success && response?.data) {
+        setClients(response.data.items || []);
+        setTotalPages(response.data.pagination?.pages || 1);
+      }
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+      toast.error('Failed to load clients');
+    } finally {
+      setIsLoadingClients(false);
+    }
+  }
+
+  async function handleCreateUser() {
+    setUserError('');
+    
+    // Validation
+    if (!userForm.name || !userForm.email || !userForm.phone || !userForm.userId) {
+      setUserError('All fields are required');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const token = getToken();
+      const payload = {
+        userId: userForm.userId,
+        name: userForm.name,
+        phone: userForm.phone,
+        email: userForm.email
+      };
+      
+      const response = await postJson('/clients/create', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response?.success) {
+        toast.success('Client created successfully!');
+        setIsAddUserOpen(false);
+        setUserForm({ name: '', email: '', phone: '', userId: '' });
+        fetchClients(); // Refresh clients list
+      }
+    } catch (err) {
+      const msg = err?.message || 'Failed to create client';
+      setUserError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleEditClient(client) {
+    setEditingClient(client);
+    setEditForm({
+      name: client.name,
+      phone: client.phone,
+      isActive: client.isActive
+    });
+    setEditError('');
+    setIsEditClientOpen(true);
+  }
+
+  async function handleUpdateClient() {
+    setEditError('');
+    
+    // Validation
+    if (!editForm.name || !editForm.phone) {
+      setEditError('Name and phone are required');
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      const token = getToken();
+      const response = await putJson(`/clients/${editingClient.id}`, editForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response?.success) {
+        toast.success('Client updated successfully!');
+        setIsEditClientOpen(false);
+        setEditingClient(null);
+        fetchClients(); // Refresh clients list
+      }
+    } catch (err) {
+      const msg = err?.message || 'Failed to update client';
+      setEditError(msg);
+      toast.error(msg);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
   return (
     <div className="admin-page">
       <div className="admin-gradient" />
@@ -41,15 +172,71 @@ function SubAdmin() {
             alt="Sub Admin"
             className="brand-logo"
           />
-          <h1>SubAdmin View</h1>
+          <h1>SubAdmin Dashboard</h1>
         </div>
         <div className="header-actions">
           <button className="logout-btn" onClick={() => setConfirmOpen(true)}>Logout</button>
         </div>
       </header>
       <main className="admin-content">
-        {/* Placeholder content area for future sub-admin features */}
+        <div className="subadmin-welcome">
+          <div className="welcome-card animate-in">
+            <div className="welcome-icon">👋</div>
+            <div>
+              <h2 className="welcome-heading">Welcome, Sub-Admin!</h2>
+              <p className="welcome-text">Manage your clients and view important information</p>
+            </div>
+            <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>
+              <span className="btn-icon">➕</span>
+              Add New Client
+            </button>
+          </div>
+        </div>
+
+        {isLoadingClients ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading clients...</p>
+          </div>
+        ) : (
+          <ClientsTable
+            clients={clients}
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            onEdit={handleEditClient}
+          />
+        )}
       </main>
+
+      <AddUserModal
+        open={isAddUserOpen}
+        onClose={() => {
+          setIsAddUserOpen(false);
+          setUserForm({ name: '', email: '', phone: '', userId: '' });
+          setUserError('');
+        }}
+        onCreate={handleCreateUser}
+        values={userForm}
+        onChange={(field, value) => setUserForm(prev => ({ ...prev, [field]: value }))}
+        error={userError}
+        submitting={isSubmitting}
+      />
+
+      <EditClientModal
+        open={isEditClientOpen}
+        onClose={() => {
+          setIsEditClientOpen(false);
+          setEditingClient(null);
+          setEditForm({ name: '', phone: '', isActive: true });
+          setEditError('');
+        }}
+        onUpdate={handleUpdateClient}
+        values={editForm}
+        onChange={(field, value) => setEditForm(prev => ({ ...prev, [field]: value }))}
+        error={editError}
+        submitting={isUpdating}
+      />
 
       {confirmOpen ? (
         <div className="modal-backdrop" onClick={() => setConfirmOpen(false)}>
