@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getToken, clearToken } from '../utils/auth';
+import { getToken, clearToken, getUser } from '../utils/auth';
 import { postJson, getJson, putJson } from '../utils/api';
 import toast from 'react-hot-toast';
 import AddUserModal from '../components/subadmin/AddUserModal';
@@ -13,6 +13,7 @@ function SubAdmin() {
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [userForm, setUserForm] = useState({
     name: '',
@@ -57,23 +58,65 @@ function SubAdmin() {
     }
   }
 
-  // Fetch clients
+  // Load current user
+  useEffect(() => {
+    const user = getUser();
+    setCurrentUser(user);
+  }, []);
+
+  // Helper function to fetch all pages of data
+  const fetchAllPages = async (endpoint, token) => {
+    let allItems = [];
+    let currentPageNum = 1;
+    let hasMore = true;
+    const pageSize = 100; // Fetch 100 items per page
+
+    try {
+      while (hasMore) {
+        const res = await getJson(`${endpoint}?page=${currentPageNum}&limit=${pageSize}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const items = res?.data?.items || [];
+        allItems = [...allItems, ...items];
+        
+        // Check if there are more pages
+        const pagination = res?.data?.pagination;
+        if (pagination) {
+          const totalPages = Math.ceil(pagination.total / pageSize);
+          hasMore = currentPageNum < totalPages;
+        } else {
+          // If no pagination info, check if we got full page
+          hasMore = items.length === pageSize;
+        }
+        
+        currentPageNum++;
+        
+        // Safety check to prevent infinite loop
+        if (currentPageNum > 100) break;
+      }
+    } catch (err) {
+      console.error(`Error fetching all pages from ${endpoint}:`, err);
+      throw err;
+    }
+    
+    return allItems;
+  };
+
+  // Fetch clients (all pages)
   useEffect(() => {
     fetchClients();
-  }, [currentPage]);
+  }, []);
 
   async function fetchClients() {
     try {
       setIsLoadingClients(true);
       const token = getToken();
-      const response = await getJson(`/clients?page=${currentPage}&limit=10`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const allClients = await fetchAllPages('/clients', token);
       
-      if (response?.success && response?.data) {
-        setClients(response.data.items || []);
-        setTotalPages(response.data.pagination?.pages || 1);
-      }
+      setClients(allClients);
+      // Calculate total pages for client-side pagination (10 items per page)
+      setTotalPages(Math.ceil(allClients.length / 10));
     } catch (err) {
       console.error('Error fetching clients:', err);
       toast.error('Failed to load clients');
@@ -184,6 +227,11 @@ function SubAdmin() {
             <div className="welcome-icon">👋</div>
             <div>
               <h2 className="welcome-heading">Welcome, Sub-Admin!</h2>
+              {currentUser && currentUser.email && (
+                <p className="welcome-text">
+                  <strong>Email:</strong> {currentUser.email}
+                </p>
+              )}
               <p className="welcome-text">Manage your clients and view important information</p>
             </div>
             <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>
@@ -200,9 +248,10 @@ function SubAdmin() {
           </div>
         ) : (
           <ClientsTable
-            clients={clients}
+            clients={clients.slice((currentPage - 1) * 10, currentPage * 10)}
             page={currentPage}
             totalPages={totalPages}
+            totalCount={clients.length}
             onPageChange={setCurrentPage}
             onEdit={handleEditClient}
           />

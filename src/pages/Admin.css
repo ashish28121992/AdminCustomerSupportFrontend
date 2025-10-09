@@ -178,6 +178,175 @@
   color: #1e293b;
 }
 
+/* Clickable users count box */
+.users-count-box.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.users-count-box.clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* Clickable cell in table */
+.clickable-cell {
+  cursor: pointer !important;
+  transition: all 0.2s ease;
+}
+
+.clickable-cell:hover {
+  background: rgba(99,102,241,0.1) !important;
+}
+
+/* Branch name link in table */
+.branch-name-link {
+  transition: all 0.2s ease;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+
+.clickable-cell:hover .branch-name-link {
+  color: #60a5fa;
+  text-decoration-color: #60a5fa;
+}
+
+/* Clickable avatar in table */
+.clickable-avatar {
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.clickable-cell:hover .clickable-avatar {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+}
+
+/* Blur backdrop */
+.blur-backdrop {
+  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Full screen modal */
+.full-screen-modal {
+  width: 95vw !important;
+  max-width: 95vw !important;
+  height: 90vh !important;
+  max-height: 90vh !important;
+  margin: 0 !important;
+}
+
+.full-screen-modal .modal-body {
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+  padding: 1.5rem;
+}
+
+.clients-modal-table-wrapper {
+  overflow-x: visible;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(99,102,241,0.2);
+  background: rgba(99,102,241,0.03);
+}
+
+.modal-info {
+  background: rgba(99,102,241,0.08);
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-info p {
+  margin: 0.5rem 0;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.modal-info strong {
+  color: #e6e8f0;
+  font-weight: 600;
+}
+
+.empty-state-small {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.clients-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wa-link-modal {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.wa-link-modal:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.clients-modal-table thead {
+  background: rgba(99,102,241,0.08);
+}
+
+.clients-modal-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #e6e8f0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(99,102,241,0.2);
+}
+
+.clients-modal-table tbody tr {
+  border-bottom: 1px solid rgba(99,102,241,0.1);
+  transition: all 0.2s ease;
+}
+
+.clients-modal-table tbody tr:hover {
+  background: rgba(99,102,241,0.05);
+}
+
+.clients-modal-table td {
+  padding: 0.75rem;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clients-modal-table td.muted {
+  color: #94a3b8;
+}
+
+.clients-modal-table .client-name-cell {
+  font-weight: 600;
+  color: #e6e8f0;
+}
+
+.clients-modal-table td:hover {
+  white-space: normal;
+  word-break: break-word;
+}
+
 /* Sub-Admin Cards Section */
 .subadmin-section {
   margin-top: 3rem;

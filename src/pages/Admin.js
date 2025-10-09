@@ -10,6 +10,7 @@ import SubAdminsTable from '../components/admin/SubAdminsTable';
 import BranchesTable from '../components/admin/BranchesTable';
 import CreateSubAdminModal from '../components/admin/CreateSubAdminModal';
 import AddBranchModal from '../components/admin/AddBranchModal';
+import SubAdminClientsModal from '../components/admin/SubAdminClientsModal';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -61,6 +62,11 @@ function Admin() {
   const [clientCounts, setClientCounts] = useState({}); // { subAdminId: count }
   const [allClients, setAllClients] = useState([]); // All clients from API
   const [totalClientsCount, setTotalClientsCount] = useState(0);
+  
+  // Modal state for viewing sub-admin clients
+  const [isClientsModalOpen, setIsClientsModalOpen] = useState(false);
+  const [selectedSubAdmin, setSelectedSubAdmin] = useState(null);
+  const [selectedSubAdminClients, setSelectedSubAdminClients] = useState([]);
 
   const normalized = (s) => s.toLowerCase();
   
@@ -225,18 +231,86 @@ function Admin() {
     }
   }
 
+  // Function to view clients of a specific sub-admin
+  function handleViewSubAdminClients(subAdmin) {
+    // Filter by parentSubAdmin ID to ensure proper isolation
+    // This ensures deleted sub-admin's clients don't show for new sub-admin
+    const subAdminClients = allClients.filter(client => {
+      // Extract IDs (parentSubAdmin might be object or string)
+      const clientParentId = typeof client.parentSubAdmin === 'object' 
+        ? String(client.parentSubAdmin?.id || '')
+        : String(client.parentSubAdmin || '');
+      const clientCreatorId = typeof client.createdBy === 'object'
+        ? String(client.createdBy?.id || '')
+        : String(client.createdBy || '');
+      const subAdminId = String(subAdmin.id || '');
+      
+      // Match by parentSubAdmin ID (this is the creator/owner of the client)
+      if (clientParentId && subAdminId && clientParentId === subAdminId) {
+        return true;
+      }
+      // Fallback to createdBy field
+      if (clientCreatorId && subAdminId && clientCreatorId === subAdminId) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    setSelectedSubAdmin(subAdmin);
+    setSelectedSubAdminClients(subAdminClients);
+    setIsClientsModalOpen(true);
+  }
+
+  // Helper function to fetch all pages of data
+  const fetchAllPages = async (endpoint, token) => {
+    let allItems = [];
+    let currentPage = 1;
+    let hasMore = true;
+    const pageSize = 100; // Fetch 100 items per page
+
+    try {
+      while (hasMore) {
+        const res = await getJson(`${endpoint}?page=${currentPage}&limit=${pageSize}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const items = res?.data?.items || [];
+        allItems = [...allItems, ...items];
+        
+        // Check if there are more pages
+        const pagination = res?.data?.pagination;
+        if (pagination) {
+          const totalPages = Math.ceil(pagination.total / pageSize);
+          hasMore = currentPage < totalPages;
+        } else {
+          // If no pagination info, check if we got full page
+          hasMore = items.length === pageSize;
+        }
+        
+        currentPage++;
+        
+        // Safety check to prevent infinite loop
+        if (currentPage > 100) break;
+      }
+    } catch (err) {
+      console.error(`Error fetching all pages from ${endpoint}:`, err);
+      throw err;
+    }
+    
+    return allItems;
+  };
+
   // Fetch branches from API
-  // Fetch branches
   React.useEffect(() => {
     (async () => {
       try {
         setIsLoadingBranches(true);
         const token = getToken();
-        const res = await getJson('/branches', { headers: { Authorization: `Bearer ${token}` } });
-        const items = res?.data?.items || [];
+        const items = await fetchAllPages('/branches', token);
         setBranches(items.map((it) => ({ id: it._id, branchId: it.branchId, branchName: it.branchName, waLink: it.waLink })));
       } catch (err) {
-        // non-blocking
+        console.error('Error fetching branches:', err);
       } finally {
         setIsLoadingBranches(false);
       }
@@ -248,13 +322,10 @@ function Admin() {
     (async () => {
       try {
         const token = getToken();
-        const res = await getJson('/clients', { headers: { Authorization: `Bearer ${token}` } });
-        const clients = res?.data?.items || [];
-        const total = res?.data?.pagination?.total || clients.length;
+        const clients = await fetchAllPages('/clients', token);
         
-        // Store all clients and total count
         setAllClients(clients);
-        setTotalClientsCount(total);
+        setTotalClientsCount(clients.length);
       } catch (err) {
         console.error('Error fetching clients:', err);
       }
@@ -266,11 +337,24 @@ function Admin() {
     if (allClients.length === 0 || subAdmins.length === 0) return;
     
     const counts = {};
-    subAdmins.forEach(subAdmin => {
-      const clientsForSubAdmin = allClients.filter(client => 
-        client.branchName === subAdmin.branchName || 
-        client.email === subAdmin.email
-      );
+    subAdmins.forEach((subAdmin) => {
+      // Count by parentSubAdmin to ensure accurate counts per sub-admin
+      const clientsForSubAdmin = allClients.filter(client => {
+        // Extract IDs (parentSubAdmin might be object or string)
+        const clientParentId = typeof client.parentSubAdmin === 'object' 
+          ? String(client.parentSubAdmin?.id || '')
+          : String(client.parentSubAdmin || '');
+        const clientCreatorId = typeof client.createdBy === 'object'
+          ? String(client.createdBy?.id || '')
+          : String(client.createdBy || '');
+        const subAdminId = String(subAdmin.id || '');
+        
+        const matchParent = clientParentId && subAdminId && clientParentId === subAdminId;
+        const matchCreator = clientCreatorId && subAdminId && clientCreatorId === subAdminId;
+        
+        return matchParent || matchCreator;
+      });
+      
       counts[subAdmin.id] = clientsForSubAdmin.length;
     });
     
@@ -282,8 +366,8 @@ function Admin() {
     (async () => {
       try {
         const token = getToken();
-        const res = await getJson('/admins?page=1&limit=10', { headers: { Authorization: `Bearer ${token}` } });
-        const items = res?.data?.items || [];
+        const items = await fetchAllPages('/admins', token);
+        
         const mapped = items.map((it) => ({
           id: it.id || it._id,
           admin: (it.branch && it.branch.branchName) || '—',
@@ -296,7 +380,7 @@ function Admin() {
         }));
         setSubAdmins(mapped);
       } catch (e) {
-        // ignore
+        console.error('Error fetching sub-admins:', e);
       }
     })();
   }, []);
@@ -325,6 +409,7 @@ function Admin() {
               branchesCount={branches.length}
               clientCounts={clientCounts}
               onNavigate={setSection}
+              onViewClients={handleViewSubAdminClients}
             />
           ) : section === 'users' ? (
             <UsersTable
@@ -356,6 +441,7 @@ function Admin() {
                   toast.error(e?.message || 'Delete failed');
                 }
               }}
+              onViewClients={handleViewSubAdminClients}
             />
           ) : null}
 
@@ -468,6 +554,17 @@ function Admin() {
           </div>
         </div>
       ) : null}
+
+      <SubAdminClientsModal
+        open={isClientsModalOpen}
+        onClose={() => {
+          setIsClientsModalOpen(false);
+          setSelectedSubAdmin(null);
+          setSelectedSubAdminClients([]);
+        }}
+        subAdmin={selectedSubAdmin}
+        clients={selectedSubAdminClients}
+      />
     </div>
   );
 }

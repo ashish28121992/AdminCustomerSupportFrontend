@@ -1,11 +1,13 @@
 import React from 'react';
 
-function ClientsTable({ clients, page, totalPages, onPageChange, onEdit }) {
+function ClientsTable({ clients, page, totalPages, onPageChange, onEdit, totalCount }) {
+  const displayCount = totalCount !== undefined ? totalCount : clients.length;
+  
   return (
     <div className="clients-section">
       <div className="section-header-compact">
         <h2 className="section-title-compact">My Clients</h2>
-        <span className="client-count">{clients.length} client{clients.length !== 1 ? 's' : ''}</span>
+        <span className="client-count">{displayCount} client{displayCount !== 1 ? 's' : ''}</span>
       </div>
       
       {clients.length === 0 ? (

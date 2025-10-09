@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
-function DashboardCards({ usersCount, subAdmins, branchesCount, onNavigate, clientCounts = {} }) {
+function DashboardCards({ usersCount, subAdmins, branchesCount, onNavigate, clientCounts = {}, onViewClients }) {
   const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
+  
   const summaryCards = [
     {
       title: 'Total Clients',
@@ -117,7 +118,10 @@ function DashboardCards({ usersCount, subAdmins, branchesCount, onNavigate, clie
                 if (statusFilter === 'inactive') return !subAdmin.isActive;
                 return true;
               })
-              .map((subAdmin, index) => (
+              .map((subAdmin, index) => {
+                const count = clientCounts[subAdmin.id] || 0;
+                
+                return (
               <div
                 key={subAdmin.id || index}
                 className="subadmin-card animate-in"
@@ -136,9 +140,13 @@ function DashboardCards({ usersCount, subAdmins, branchesCount, onNavigate, clie
                   </div>
                 </div>
                 <div className="subadmin-stats-single">
-                  <div className="users-count-box">
+                  <div 
+                    className="users-count-box clickable" 
+                    onClick={() => onViewClients && onViewClients(subAdmin)}
+                    title="Click to view clients"
+                  >
                     <div className="users-count-label">My Clients</div>
-                    <div className="users-count-value">{clientCounts[subAdmin.id] || 0}</div>
+                    <div className="users-count-value">{count}</div>
                   </div>
                 </div>
                 <div className="subadmin-footer">
@@ -150,7 +158,8 @@ function DashboardCards({ usersCount, subAdmins, branchesCount, onNavigate, clie
                   </span>
                 </div>
               </div>
-            ))}
+                );
+              })}
           </div>
         </div>
       ) : (

@@ -43,7 +43,15 @@ function Login() {
         const role = user?.role || '';
         saveUserRole(role);
         saveUser(user);
-        toast.success('Login successful');
+        toast.success('Login successful! 🎉', {
+          duration: 2000,
+          style: {
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            fontWeight: '600',
+            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)'
+          }
+        });
         if (role === 'sub') {
           navigate('/subadmin', { replace: true });
         } else {
@@ -51,9 +59,29 @@ function Login() {
         }
       } else {
         const msg = res?.message || 'Login failed';
-        setApiError(msg);
-        toast.error(msg);
+        setApiError('⚠️ Please fill correct credentials. Check your email and password.');
+        toast.error('Invalid credentials!', {
+          duration: 3000,
+          style: {
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            color: 'white',
+            fontWeight: '600',
+            boxShadow: '0 8px 20px rgba(239, 68, 68, 0.3)'
+          }
+        });
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      setApiError('⚠️ Please fill correct credentials. Email or password is incorrect.');
+      toast.error('Login failed! Check your credentials.', {
+        duration: 3000,
+        style: {
+          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          color: 'white',
+          fontWeight: '600',
+          boxShadow: '0 8px 20px rgba(239, 68, 68, 0.3)'
+        }
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -130,10 +158,26 @@ function Login() {
             <a className="link" href="#forgot">Forgot password?</a>
           </div>
 
+          {apiError && (
+            <div className="error-banner animate-shake">
+              <div className="error-icon">🔒</div>
+              <div className="error-content">
+                <div className="error-title">Authentication Failed</div>
+                <div className="error-message">{apiError}</div>
+              </div>
+            </div>
+          )}
+
           <button className="submit" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? (
+              <>
+                <span className="spinner-small"></span>
+                <span>Signing in…</span>
+              </>
+            ) : (
+              'Sign in'
+            )}
           </button>
-        {apiError ? <div className="error-text" style={{ marginTop: 8 }}>{apiError}</div> : null}
         </form>
 
           <div className="footer-text">
