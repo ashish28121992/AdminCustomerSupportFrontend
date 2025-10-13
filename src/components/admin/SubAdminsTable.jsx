@@ -1,6 +1,6 @@
 import React from 'react';
 
-function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryChange, onDelete, onViewClients }) {
+function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryChange, onDelete, onViewClients, onChangePassword }) {
   return (
     <section className="tables-grid">
       <div className="panel table-panel animate-in">
@@ -20,6 +20,7 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
                 <th>Status</th>
                 <th>Branch WA</th>
                 <th>Created At</th>
+                <th>Change Password</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -47,6 +48,15 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
                     )}
                   </td>
                   <td className="muted">{a.createdAt || a.lastCreated}</td>
+                  <td>
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => onChangePassword && onChangePassword(a)}
+                      title="Change password for this sub-admin"
+                    >
+                      🔐 Change
+                    </button>
+                  </td>
                   <td><button className="btn-danger" onClick={() => onDelete(a.id)}>Delete</button></td>
                 </tr>
               ))}

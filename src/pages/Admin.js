@@ -11,6 +11,7 @@ import BranchesTable from '../components/admin/BranchesTable';
 import CreateSubAdminModal from '../components/admin/CreateSubAdminModal';
 import AddBranchModal from '../components/admin/AddBranchModal';
 import SubAdminClientsModal from '../components/admin/SubAdminClientsModal';
+import ChangePasswordModal from '../components/admin/ChangePasswordModal';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -67,6 +68,10 @@ function Admin() {
   const [isClientsModalOpen, setIsClientsModalOpen] = useState(false);
   const [selectedSubAdmin, setSelectedSubAdmin] = useState(null);
   const [selectedSubAdminClients, setSelectedSubAdminClients] = useState([]);
+  
+  // Modal state for changing sub-admin password
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [selectedSubAdminForPassword, setSelectedSubAdminForPassword] = useState(null);
 
   const normalized = (s) => s.toLowerCase();
   
@@ -262,6 +267,12 @@ function Admin() {
     setIsClientsModalOpen(true);
   }
 
+  // Function to open change password modal for a sub-admin
+  function handleChangePassword(subAdmin) {
+    setSelectedSubAdminForPassword(subAdmin);
+    setIsChangePasswordOpen(true);
+  }
+
   // Helper function to fetch all pages of data
   const fetchAllPages = async (endpoint, token) => {
     let allItems = [];
@@ -442,6 +453,7 @@ function Admin() {
                 }
               }}
               onViewClients={handleViewSubAdminClients}
+              onChangePassword={handleChangePassword}
             />
           ) : null}
 
@@ -564,6 +576,15 @@ function Admin() {
         }}
         subAdmin={selectedSubAdmin}
         clients={selectedSubAdminClients}
+      />
+
+      <ChangePasswordModal
+        open={isChangePasswordOpen}
+        onClose={() => {
+          setIsChangePasswordOpen(false);
+          setSelectedSubAdminForPassword(null);
+        }}
+        subAdmin={selectedSubAdminForPassword}
       />
     </div>
   );

@@ -738,6 +738,8 @@
 .status.blocked { color: #fca5a5; }
 .btn-danger { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(248,113,113,0.35); color: #fecaca; background: rgba(127,29,29,0.35); cursor: pointer; }
 .btn-danger:hover { filter: brightness(1.1); }
+.btn-primary { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(139,92,246,0.35); color: #e9d5ff; background: rgba(88,28,135,0.35); cursor: pointer; font-weight: 600; transition: all 0.2s; }
+.btn-primary:hover { filter: brightness(1.2); transform: translateY(-1px); }
 .counter { display: inline-block; min-width: 34px; text-align: center; padding: 4px 8px; border-radius: 10px; background: rgba(16,185,129,0.18); color: #bbf7d0; border: 1px solid rgba(16,185,129,0.35); font-weight: 700; }
 
 .animate-in { animation: slideIn 420ms ease both; }

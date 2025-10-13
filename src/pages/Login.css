@@ -87,13 +87,22 @@
 .field input[type="password"],
 .field input[type="text"] {
   width: 100%;
-  padding: 12px 12px;
+  padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: rgba(15, 23, 42, 0.65);
   color: #e6e8f0;
+  font-size: 15px;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Add extra padding for password inputs to make room for Show/Hide button */
+.password-input input[type="password"],
+.password-input input[type="text"] {
+  padding-right: 70px;
+  box-sizing: border-box;
 }
 
 .field input:focus {
@@ -103,23 +112,30 @@
 
 .password-input {
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .password-input .toggle-visibility {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 12px;
   transform: translateY(-50%);
-  background: transparent;
+  background: rgba(139, 92, 246, 0.1);
   color: #a5b4fc;
-  border: none;
+  border: 1px solid rgba(139, 92, 246, 0.25);
   cursor: pointer;
-  padding: 6px 8px;
+  padding: 6px 12px;
   border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .password-input .toggle-visibility:hover {
+  background: rgba(139, 92, 246, 0.2);
   color: #c7d2fe;
+  border-color: rgba(139, 92, 246, 0.4);
 }
 
 .error-text {
@@ -229,6 +245,15 @@
 }
 
 .link:hover { text-decoration: underline; }
+
+.forgot-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
 
 .submit {
   margin-top: 6px;

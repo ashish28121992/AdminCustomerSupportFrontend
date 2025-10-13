@@ -77,4 +77,19 @@ export async function putJson(path, body, options = {}) {
   return data;
 }
 
+/**
+ * Send email using SendGrid API
+ * @param {Object} emailData - Email details
+ * @param {string} emailData.to - Recipient email address
+ * @param {string} emailData.subject - Email subject
+ * @param {string} emailData.text - Plain text content (optional)
+ * @param {string} emailData.html - HTML content (optional)
+ * @param {string} emailData.from - Sender email (optional, uses default from backend)
+ * @param {Object} options - Additional fetch options
+ * @returns {Promise} Response from email API
+ */
+export async function sendEmail(emailData, options = {}) {
+  return postJson('/email/send', emailData, options);
+}
+
 

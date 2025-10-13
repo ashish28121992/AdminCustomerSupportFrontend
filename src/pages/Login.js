@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postJson } from '../utils/api';
 import { saveToken, saveUserRole, saveUser } from '../utils/auth';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 import toast from 'react-hot-toast';
 import './Login.css';
 
@@ -13,6 +14,7 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   function validate() {
     const nextErrors = {};
@@ -155,7 +157,13 @@ function Login() {
               <input type="checkbox" />
               <span>Remember me</span>
             </label>
-            <a className="link" href="#forgot">Forgot password?</a>
+            <button 
+              type="button" 
+              className="link forgot-link" 
+              onClick={() => setIsForgotPasswordOpen(true)}
+            >
+              Forgot password?
+            </button>
           </div>
 
           {apiError && (
@@ -189,6 +197,11 @@ function Login() {
           </div>
         </div>
       </div>
+
+      <ForgotPasswordModal
+        open={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
     </div>
   );
 }
