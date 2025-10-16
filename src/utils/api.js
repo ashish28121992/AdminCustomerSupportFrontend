@@ -1,7 +1,23 @@
 import { API_BASE_URL } from '../config';
 
+function buildApiUrl(path) {
+  const raw = `${API_BASE_URL}${path}`;
+  try {
+    const url = new URL(raw);
+    if (typeof window !== 'undefined' && window.location?.protocol === 'https:' && url.protocol === 'http:') {
+      url.protocol = 'https:'; // upgrade to https to avoid mixed content
+    }
+    return url.toString();
+  } catch (_) {
+    if (typeof window !== 'undefined' && window.location?.protocol === 'https:' && /^http:\/\//i.test(raw)) {
+      return raw.replace(/^http:/i, 'https:');
+    }
+    return raw;
+  }
+}
+
 export async function postJson(path, body, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -21,7 +37,7 @@ export async function postJson(path, body, options = {}) {
 }
 
 export async function getJson(path, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     method: 'GET',
     headers: {
       ...(options.headers || {}),
@@ -39,7 +55,7 @@ export async function getJson(path, options = {}) {
 }
 
 export async function deleteJson(path, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     method: 'DELETE',
     headers: {
       ...(options.headers || {}),
@@ -58,7 +74,7 @@ export async function deleteJson(path, options = {}) {
 }
 
 export async function putJson(path, body, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(buildApiUrl(path), {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

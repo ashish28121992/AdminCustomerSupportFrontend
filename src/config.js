@@ -1,7 +1,7 @@
 // Centralized app configuration
 // Prefer environment variable if provided, else fallback to local dev API
 // Normalize base URL and enforce HTTPS when app runs on HTTPS
-const RAW_API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://44.221.30.127';
+const RAW_API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://44.221.30.127:4000';
 
 function normalizeApiBaseUrl(rawUrl) {
   try {
