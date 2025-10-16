@@ -786,3 +786,13 @@
 }
 
 
+/* Phones: tighten header and inputs */
+@media (max-width: 420px) {
+  .admin-header .brand-logo { width: 64px; height: 64px; }
+  .admin-header h1 { font-size: 16px; }
+  .search input { width: 140px; }
+  .tables-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .toolbar-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+}
+
+

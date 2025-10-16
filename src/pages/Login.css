@@ -293,3 +293,21 @@
 }
 
 
+/* Extra-small devices tweaks */
+@media (max-width: 420px) {
+  .logo-badge {
+    width: 80px;
+    height: 80px;
+    top: -40px;
+    box-shadow: 0 12px 22px rgba(0,0,0,0.35), 0 0 0 8px rgba(17, 24, 39, 0.8);
+  }
+
+  .login-card {
+    padding-top: 72px; /* accommodate smaller badge */
+  }
+
+  .brand-text h1 { font-size: 18px; }
+  .brand-text p { font-size: 12px; }
+}
+
+
