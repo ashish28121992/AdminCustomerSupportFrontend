@@ -9,6 +9,8 @@ function ChangePasswordModal({ open, onClose, subAdmin }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -135,27 +137,51 @@ function ChangePasswordModal({ open, onClose, subAdmin }) {
           <div className="password-section">
             <div className="form-field">
               <label htmlFor="new-password">New Password</label>
-              <input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password (min 8 characters)"
-                disabled={isSubmitting}
-                autoFocus
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="new-password"
+                  type={showNew ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 8 characters)"
+                  disabled={isSubmitting}
+                  autoFocus
+                  style={{ paddingRight: 36 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  aria-label={showNew ? 'Hide password' : 'Show password'}
+                  title={showNew ? 'Hide password' : 'Show password'}
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: '#9aa3b2' }}
+                >
+                  {showNew ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
 
             <div className="form-field">
               <label htmlFor="confirm-password">Confirm Password</label>
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter new password"
-                disabled={isSubmitting}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="confirm-password"
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  disabled={isSubmitting}
+                  style={{ paddingRight: 36 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  title={showConfirm ? 'Hide password' : 'Show password'}
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: '#9aa3b2' }}
+                >
+                  {showConfirm ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
           </div>
 

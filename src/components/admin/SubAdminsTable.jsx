@@ -14,11 +14,10 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
           <table className="table compact">
             <thead>
               <tr>
-                <th>Branch Name</th>
                 <th>Email</th>
                 <th>Sub Admin ID</th>
                 <th>Status</th>
-                <th>Branch WA</th>
+                <th>WhatsApp Link</th>
                 <th>Created At</th>
                 <th>Change Password</th>
                 <th>Action</th>
@@ -27,16 +26,6 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
             <tbody>
               {subs.map((a, idx) => (
                 <tr key={a.id || a.email} style={{ animationDelay: `${idx * 70}ms` }}>
-                  <td 
-                    className="name-cell clickable-cell" 
-                    onClick={() => onViewClients && onViewClients(a)}
-                    title="Click to view clients"
-                  >
-                    <div className="avatar tiny clickable-avatar" />
-                    <span className="branch-name-link">
-                      {a.branchName || a.admin}
-                    </span>
-                  </td>
                   <td className="muted">{a.email}</td>
                   <td className="muted">{a.userId || '—'}</td>
                   <td className="muted">{a.isActive ? 'Active' : 'Inactive'}</td>

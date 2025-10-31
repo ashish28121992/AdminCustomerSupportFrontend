@@ -18,8 +18,8 @@ function UsersTable({ users, page, totalPages, onPageChange, query, onQueryChang
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Sub-Admin</th>
                 <th>Status</th>
+                <th>Date & Time</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -33,8 +33,15 @@ function UsersTable({ users, page, totalPages, onPageChange, query, onQueryChang
                   </td>
                   <td className="muted">{u.email}</td>
                   <td><span className="badge">{u.role}</span></td>
-                  <td className="muted">{u.subAdmin}</td>
                   <td><span className={`status ${u.status.toLowerCase()}`}>{u.status}</span></td>
+                  <td className="muted">{u.createdAt ? new Date(u.createdAt).toLocaleString('en-IN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  }) : 'N/A'}</td>
                   <td><button className="btn-danger" onClick={() => onDelete(u.id)}>Delete</button></td>
                 </tr>
               ))}

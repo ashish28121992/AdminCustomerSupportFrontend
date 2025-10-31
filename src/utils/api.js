@@ -1,6 +1,14 @@
 import { API_BASE_URL } from '../config';
 
 function buildApiUrl(path) {
+  // If 'path' is already an absolute URL, return it (with HTTPS upgrade in https pages)
+  if (/^https?:\/\//i.test(path)) {
+    if (typeof window !== 'undefined' && window.location?.protocol === 'https:' && /^http:\/\//i.test(path)) {
+      return path.replace(/^http:/i, 'https:');
+    }
+    return path;
+  }
+
   const raw = `${API_BASE_URL}${path}`;
   try {
     const url = new URL(raw);
@@ -17,80 +25,96 @@ function buildApiUrl(path) {
 }
 
 export async function postJson(path, body, options = {}) {
-  const res = await fetch(buildApiUrl(path), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    body: JSON.stringify(body),
-    credentials: 'include',
-  });
-  const contentType = res.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
-  const data = isJson ? await res.json() : await res.text();
-  if (!res.ok) {
-    const message = isJson ? (data?.message || 'Request failed') : res.statusText;
-    throw new Error(message);
+  try {
+    const res = await fetch(buildApiUrl(path), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const data = isJson ? await res.json() : await res.text();
+    if (!res.ok) {
+      const message = isJson ? (data?.message || 'Request failed') : res.statusText;
+      throw new Error(message);
+    }
+    return data;
+  } catch (error) {
+    throw error;
   }
-  return data;
 }
 
 export async function getJson(path, options = {}) {
-  const res = await fetch(buildApiUrl(path), {
-    method: 'GET',
-    headers: {
-      ...(options.headers || {}),
-    },
-    credentials: 'include',
-  });
-  const contentType = res.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
-  const data = isJson ? await res.json() : await res.text();
-  if (!res.ok) {
-    const message = isJson ? (data?.message || 'Request failed') : res.statusText;
-    throw new Error(message);
+  try {
+    const res = await fetch(buildApiUrl(path), {
+      method: 'GET',
+      headers: {
+        ...(options.headers || {}),
+      },
+      credentials: 'include',
+    });
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const data = isJson ? await res.json() : await res.text();
+    if (!res.ok) {
+      const message = isJson ? (data?.message || 'Request failed') : res.statusText;
+      throw new Error(message);
+    }
+    return data;
+  } catch (error) {
+    throw error;
   }
-  return data;
 }
 
 export async function deleteJson(path, options = {}) {
-  const res = await fetch(buildApiUrl(path), {
-    method: 'DELETE',
-    headers: {
-      ...(options.headers || {}),
-    },
-    credentials: 'include',
-  });
-  if (res.status === 204) return {};
-  const contentType = res.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
-  const data = isJson ? await res.json() : await res.text();
-  if (!res.ok) {
-    const message = isJson ? (data?.message || 'Request failed') : res.statusText;
-    throw new Error(message);
+  try {
+    const res = await fetch(buildApiUrl(path), {
+      method: 'DELETE',
+      headers: {
+        ...(options.headers || {}),
+      },
+      credentials: 'include',
+    });
+    if (res.status === 204) return {};
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const data = isJson ? await res.json() : await res.text();
+    if (!res.ok) {
+      const message = isJson ? (data?.message || 'Request failed') : res.statusText;
+      throw new Error(message);
+    }
+    return data;
+  } catch (error) {
+    throw error;
   }
-  return data;
 }
 
 export async function putJson(path, body, options = {}) {
-  const res = await fetch(buildApiUrl(path), {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    body: JSON.stringify(body),
-    credentials: 'include',
-  });
-  const contentType = res.headers.get('content-type') || '';
-  const isJson = contentType.includes('application/json');
-  const data = isJson ? await res.json() : await res.text();
-  if (!res.ok) {
-    const message = isJson ? (data?.message || 'Request failed') : res.statusText;
-    throw new Error(message);
+  try {
+    const res = await fetch(buildApiUrl(path), {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const data = isJson ? await res.json() : await res.text();
+    if (!res.ok) {
+      const message = isJson ? (data?.message || 'Request failed') : res.statusText;
+      throw new Error(message);
+    }
+    return data;
+  } catch (error) {
+    throw error;
   }
-  return data;
 }
 
 /**

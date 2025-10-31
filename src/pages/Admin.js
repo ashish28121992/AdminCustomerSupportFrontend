@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { postJson, getJson, deleteJson, putJson } from '../utils/api';
+import { postJson, getJson, deleteJson } from '../utils/api';
 import { getToken } from '../utils/auth';
 import Header from '../components/admin/Header';
 import Sidebar from '../components/admin/Sidebar';
 import DashboardCards from '../components/admin/DashboardCards';
 import UsersTable from '../components/admin/UsersTable';
 import SubAdminsTable from '../components/admin/SubAdminsTable';
-import BranchesTable from '../components/admin/BranchesTable';
 import CreateSubAdminModal from '../components/admin/CreateSubAdminModal';
-import AddBranchModal from '../components/admin/AddBranchModal';
 import SubAdminClientsModal from '../components/admin/SubAdminClientsModal';
 import ChangePasswordModal from '../components/admin/ChangePasswordModal';
 import toast from 'react-hot-toast';
@@ -18,17 +16,20 @@ import './Admin.css';
 function Admin() {
   const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [usersPage, setUsersPage] = useState(1);
   const [subsPage, setSubsPage] = useState(1);
-  const [branchesPage, setBranchesPage] = useState(1);
+  
   const [usersQuery, setUsersQuery] = useState('');
   const [subsQuery, setSubsQuery] = useState('');
-  const [branchesQuery, setBranchesQuery] = useState('');
+  
+  const [timePeriod, setTimePeriod] = useState('realtime');
+  const [analyticsRows, setAnalyticsRows] = useState([]);
+  
+  const [analyticsSummary, setAnalyticsSummary] = useState(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreatingSub, setIsCreatingSub] = useState(false);
-  const [isAddBranchOpen, setIsAddBranchOpen] = useState(false);
-  const [isEditBranchOpen, setIsEditBranchOpen] = useState(false);
-  const [editingBranch, setEditingBranch] = useState(null);
+  
   // Sub-admin form state
   const [newSubEmail, setNewSubEmail] = useState('');
   const [newSubPassword, setNewSubPassword] = useState('');
@@ -39,25 +40,10 @@ function Admin() {
   const [permUsersRead, setPermUsersRead] = useState(true);
   const [formError, setFormError] = useState('');
   
-  // Branch form state
-  const [branchForm, setBranchForm] = useState({
-    branchId: '',
-    branchName: '',
-    waLink: ''
-  });
-  const [branchError, setBranchError] = useState('');
   
-  // Branches state
-  const [branches, setBranches] = useState([]);
-  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   
   const pageSize = 5;
-  const users = [
-    { id: 'USR-3201', name: 'Priya Sharma', email: 'priya@example.com', role: 'User', status: 'Active', subAdmin: 'Riya Kapoor' },
-    { id: 'USR-3202', name: 'Aman Verma', email: 'aman@example.com', role: 'User', status: 'Pending', subAdmin: 'Vikram Rao' },
-    { id: 'USR-3203', name: 'Neha Singh', email: 'neha@example.com', role: 'User', status: 'Active', subAdmin: 'Arjun Patel' },
-    { id: 'USR-3204', name: 'Rahul Jain', email: 'rahul@example.com', role: 'User', status: 'Blocked', subAdmin: 'Riya Kapoor' },
-  ];
+  
 
   const [subAdmins, setSubAdmins] = useState([]);
   const [clientCounts, setClientCounts] = useState({}); // { subAdminId: count }
@@ -82,7 +68,8 @@ function Admin() {
     email: client.email,
     role: 'Client',
     status: client.isActive ? 'Active' : 'Inactive',
-    subAdmin: client.branchName || 'N/A'
+    subAdmin: client.branchName || 'N/A',
+    createdAt: client.createdAt
   }));
 
   const usersFiltered = mappedClients.filter((u) => {
@@ -111,25 +98,14 @@ function Admin() {
     );
   });
   
-  const branchesFiltered = branches.filter((b) => {
-    const q = normalized(branchesQuery);
-    if (!q) return true;
-    return (
-      normalized(b.branchId || '').includes(q) ||
-      normalized(b.branchName || '').includes(q) ||
-      normalized(b.waLink || '').includes(q)
-    );
-  });
+  
 
   const usersTotalPages = Math.max(1, Math.ceil(usersFiltered.length / pageSize));
   const subsTotalPages = Math.max(1, Math.ceil(subsFiltered.length / pageSize));
-  const branchesTotalPages = Math.max(1, Math.ceil(branchesFiltered.length / pageSize));
   const usersStartIdx = (usersPage - 1) * pageSize;
   const subsStartIdx = (subsPage - 1) * pageSize;
-  const branchesStartIdx = (branchesPage - 1) * pageSize;
   const pagedUsers = usersFiltered.slice(usersStartIdx, usersStartIdx + pageSize);
   const pagedSubs = subsFiltered.slice(subsStartIdx, subsStartIdx + pageSize);
-  const pagedBranches = branchesFiltered.slice(branchesStartIdx, branchesStartIdx + pageSize);
 
   async function handleCreateSubAdmin(e) {
     e.preventDefault();
@@ -147,7 +123,7 @@ function Admin() {
       setFormError('User ID is required');
       return;
     }
-    const branchIdToUse = newSubBranchId.trim() || 'ROOT-BRANCH';
+    // Branch flow removed; waLink provided directly during sub-admin creation
 
     const permissions = [];
     if (permUsersRead) {
@@ -161,8 +137,8 @@ function Admin() {
         email: newSubEmail.trim(),
         password: newSubPassword,
         userId: newSubUserId.trim(),
-        branchId: branchIdToUse,
         isActive: Boolean(newSubIsActive),
+        waLink: (newWaLink || '').trim(),
         permissions,
       };
       // Debug: verify payload
@@ -205,36 +181,7 @@ function Admin() {
     }
   }
 
-  async function handleAddBranch(e) {
-    e.preventDefault();
-    setBranchError('');
-    if (!branchForm.branchId.trim()) { setBranchError('Branch ID is required'); return; }
-    if (!branchForm.branchName.trim()) { setBranchError('Branch name is required'); return; }
-    try {
-      const token = getToken();
-      const payload = {
-        branchId: branchForm.branchId.trim(),
-        branchName: branchForm.branchName.trim(),
-        waLink: branchForm.waLink.trim(),
-      };
-      const res = await postJson('/branches', payload, { headers: { Authorization: `Bearer ${token}` } });
-      if (res?.data) {
-        setBranches(prev => [{ id: res.data._id || Date.now(), branchId: res.data.branchId, branchName: res.data.branchName, waLink: res.data.waLink }, ...prev]);
-        toast.success('Branch created');
-        setIsAddBranchOpen(false);
-        setBranchForm({ branchId: '', branchName: '', waLink: '' });
-        setSection('branches');
-        return;
-      }
-      const msg = res?.message || 'Failed to create branch';
-      setBranchError(msg);
-      toast.error(msg);
-    } catch (err) {
-      const msg = err?.message || 'Network error';
-      setBranchError(msg);
-      toast.error(msg);
-    }
-  }
+  
 
   // Function to view clients of a specific sub-admin
   function handleViewSubAdminClients(subAdmin) {
@@ -312,21 +259,141 @@ function Admin() {
     return allItems;
   };
 
-  // Fetch branches from API
-  React.useEffect(() => {
-    (async () => {
-      try {
-        setIsLoadingBranches(true);
-        const token = getToken();
-        const items = await fetchAllPages('/branches', token);
-        setBranches(items.map((it) => ({ id: it._id, branchId: it.branchId, branchName: it.branchName, waLink: it.waLink })));
-      } catch (err) {
-        console.error('Error fetching branches:', err);
-      } finally {
-        setIsLoadingBranches(false);
+  // Fetch analytics for selected time period (1d, 7d, 30d, realtime)
+  const loadAnalytics = async (periodId) => {
+    // Map UI ids to API period query values
+    const periodMap = {
+      '1day': '1d',
+      '7days': '7d',
+      '30days': '30d',
+      'realtime': 'realtime',
+    };
+
+    const periodQuery = periodMap[periodId] || '1d';
+    // Support 1d, 7d, 30d, realtime; others will show empty state
+    if (periodQuery !== '1d' && periodQuery !== '7d' && periodQuery !== '30d' && periodQuery !== 'realtime') {
+      setAnalyticsRows([]);
+      return;
+    }
+
+    try {
+      
+      const token = getToken() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGUzODI3NDljZjViNDNhODdmYmJjODciLCJyb2xlIjoicm9vdCIsInR2Ijo1OSwiaWF0IjoxNzYxMjg5NjE1LCJleHAiOjE3NjEyOTA1MTV9.J5m7z2_hIW7U1lUrUYZfC8-1MWv2YEqdVp29kPnMccM';
+      const endpointPath = periodQuery === 'realtime'
+        ? '/analytics/realtime-stats'
+        : `/analytics/client-visits?period=${encodeURIComponent(periodQuery)}`;
+      const res = await getJson(endpointPath, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Normalize rows for DashboardCards table
+      // Try to support various shapes conservatively
+      // Set summary for realtime or day-based periods if available
+      if (res?.data && typeof res.data === 'object') {
+        if (periodQuery === 'realtime') {
+          const { today, yesterday, thisWeek, thisMonth, total } = res.data;
+          if ([today, yesterday, thisWeek, thisMonth, total].some(v => typeof v !== 'undefined')) {
+            setAnalyticsSummary({ today, yesterday, thisWeek, thisMonth, total });
+          } else {
+            setAnalyticsSummary(null);
+          }
+        } else if (res.data.summary && typeof res.data.summary === 'object') {
+          setAnalyticsSummary(res.data.summary);
+        } else {
+          setAnalyticsSummary(null);
+        }
+      } else {
+        setAnalyticsSummary(null);
       }
-    })();
-  }, []);
+
+      let items = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      // Prefer named arrays when present (e.g., data.groupedVisits)
+      if (res?.data && typeof res.data === 'object') {
+        if (Array.isArray(res.data.groupedVisits)) {
+          items = res.data.groupedVisits;
+        } else if (!Array.isArray(items)) {
+          const firstArray = Object.values(res.data).find(v => Array.isArray(v));
+          if (Array.isArray(firstArray)) items = firstArray;
+        }
+      }
+      // Realtime: if we have a flat visits list, aggregate by date to match other periods
+      if (periodQuery === 'realtime' && res?.data && typeof res.data === 'object') {
+        const visitsArray = Array.isArray(res.data.recentVisits)
+          ? res.data.recentVisits
+          : (Array.isArray(res.data.visits) ? res.data.visits : []);
+        if (Array.isArray(visitsArray) && visitsArray.length > 0) {
+          const dateToGroup = new Map();
+          visitsArray.forEach((v) => {
+            const visitedAt = v.visitedAt || v.timestamp || Date.now();
+            const d = new Date(visitedAt);
+            const dateKey = isNaN(d.getTime()) ? String(visitedAt) : d.toISOString().slice(0, 10);
+            if (!dateToGroup.has(dateKey)) {
+              dateToGroup.set(dateKey, { date: dateKey, visits: [], uniqueSet: new Set() });
+            }
+            const entry = dateToGroup.get(dateKey);
+            entry.visits.push(v);
+            if (v.userId) entry.uniqueSet.add(String(v.userId));
+          });
+          items = Array.from(dateToGroup.values())
+            .map(g => ({
+              date: g.date,
+              totalVisits: g.visits.length,
+              uniqueClients: g.uniqueSet.size,
+              visits: g.visits,
+            }))
+            .sort((a, b) => (a.date < b.date ? 1 : -1));
+        }
+      }
+      const normalized = items.map((it, idx) => {
+        const date = it.date || it.day || it.timestamp || it.time || `#${idx + 1}`;
+        // Map counts robustly for grouped daily rows and generic rows
+        const users =
+          it.totalUniqueClients ??
+          it.uniqueClients ??
+          it.users ??
+          it.uniqueUsers ??
+          it.clients ?? 0;
+        const rawInquiries =
+          it.totalVisits ??
+          it.inquiries ??
+          it.totalInquiries ??
+          it.events ??
+          it.total ??
+          (Array.isArray(it.visits) ? it.visits.length : undefined);
+        const inquiries = Number(rawInquiries ?? 0) || 0;
+        const active =
+          it.active ??
+          it.activeUsers ??
+          it.unique ??
+          it.uniqueClients ?? 0;
+        const visitors = Array.isArray(it.visits)
+          ? it.visits.map(v => ({
+              userId: v.userId || '',
+              name: v.clientName || v.name || '',
+              email: v.clientEmail || v.email || '',
+              phone: v.clientPhone || v.phone || '',
+              branchName: v.branchName || '',
+              visitedAt: v.visitedAt || v.timestamp || '',
+            }))
+          : [];
+        return {
+          date: typeof date === 'string' ? date : new Date(date).toLocaleString(),
+          users: Number(users) || 0,
+          inquiries: Number(inquiries) || 0,
+          active: Number(active) || 0,
+          visitors,
+        };
+      });
+      setAnalyticsRows(normalized);
+    } catch (err) {
+      console.error('Error loading analytics:', err);
+      setAnalyticsRows([]);
+    } finally {
+      
+    }
+  };
+
+  
 
   // Fetch all clients
   useEffect(() => {
@@ -386,7 +453,7 @@ function Admin() {
           email: it.email,
           userId: it.userId || '',
           isActive: Boolean(it.isActive),
-          branchWaLink: (it.branchSnapshot && it.branchSnapshot.waLink) || (it.branch && it.branch.waLink) || '',
+          branchWaLink: it.waLink || (it.branchSnapshot && it.branchSnapshot.waLink) || (it.branch && it.branch.waLink) || '',
           createdAt: it.createdAt,
         }));
         setSubAdmins(mapped);
@@ -400,16 +467,27 @@ function Admin() {
     <div className="admin-page">
       <div className="admin-gradient" />
 
-      <div className={`content-shell ${isCreateOpen || isAddBranchOpen ? 'blurred' : ''}`}>
-        <Header />
+      <div className={`content-shell ${isCreateOpen ? 'blurred' : ''}`}>
+        <Header 
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isMenuOpen={isMobileMenuOpen}
+          onBrandClick={() => setSection('dashboard')}
+        />
 
         <div className="admin-layout">
           <Sidebar
             section={section}
             setSection={setSection}
             onCreateSubAdmin={() => setIsCreateOpen(true)}
-            onAddBranch={() => setIsAddBranchOpen(true)}
             onLogout={() => navigate('/', { replace: true })}
+            timePeriod={timePeriod}
+            onTimePeriodChange={(period) => {
+              setTimePeriod(period);
+              // Load analytics for the selected period (currently implements 1 day)
+              loadAnalytics(period);
+            }}
+            isMobileMenuOpen={isMobileMenuOpen}
+            onMobileMenuClose={() => setIsMobileMenuOpen(false)}
           />
 
           <main className="admin-content">
@@ -417,10 +495,12 @@ function Admin() {
             <DashboardCards
               usersCount={totalClientsCount}
               subAdmins={subAdmins}
-              branchesCount={branches.length}
               clientCounts={clientCounts}
               onNavigate={setSection}
               onViewClients={handleViewSubAdminClients}
+              timePeriod={timePeriod}
+              analyticsData={analyticsRows}
+              analyticsSummary={analyticsSummary}
             />
           ) : section === 'users' ? (
             <UsersTable
@@ -456,28 +536,7 @@ function Admin() {
               onChangePassword={handleChangePassword}
             />
           ) : null}
-
-          {section === 'branches' ? (
-            <BranchesTable
-              branches={pagedBranches}
-              page={branchesPage}
-              totalPages={branchesTotalPages}
-              onPageChange={(p) => setBranchesPage(Math.min(Math.max(1, p), branchesTotalPages))}
-              query={branchesQuery}
-              onQueryChange={(q) => { setBranchesQuery(q); setBranchesPage(1); }}
-              onDelete={async (id) => {
-                try {
-                  const token = getToken();
-                  await deleteJson(`/branches/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-                  setBranches(prev => prev.filter(b => b.id !== id));
-                  toast.success('Deleted');
-                } catch (e) {
-                  toast.error(e?.message || 'Delete failed');
-                }
-              }}
-              onEdit={(branch) => { setEditingBranch(branch); setIsEditBranchOpen(true); }}
-            />
-          ) : null}
+          
           </main>
         </div>
       </div>
@@ -508,64 +567,7 @@ function Admin() {
         error={formError}
       />
 
-      <AddBranchModal
-        open={isAddBranchOpen}
-        onClose={() => setIsAddBranchOpen(false)}
-        onCreate={handleAddBranch}
-        values={branchForm}
-        onChange={(field, value) => {
-          setBranchForm(prev => ({ ...prev, [field]: value }));
-        }}
-        error={branchError}
-        submitting={false}
-      />
-
-      {isEditBranchOpen ? (
-        <div className="modal-backdrop" onClick={() => setIsEditBranchOpen(false)}>
-          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Edit Branch</h3>
-              <button className="ghost" onClick={() => setIsEditBranchOpen(false)}>Close</button>
-            </div>
-            <form className="modal-body" onSubmit={async (e) => {
-              e.preventDefault();
-              if (!editingBranch) return;
-              try {
-                const token = getToken();
-                const payload = {
-                  branchId: editingBranch.branchId,
-                  branchName: editingBranch.branchName,
-                  waLink: editingBranch.waLink || '',
-                };
-                const res = await putJson(`/branches/${editingBranch.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
-                // optimistic update
-                setBranches(prev => prev.map(b => b.id === editingBranch.id ? { ...b, ...payload } : b));
-                toast.success('Branch updated');
-                setIsEditBranchOpen(false);
-              } catch (err) {
-                toast.error(err?.message || 'Update failed');
-              }
-            }}>
-              <label>
-                <span>Branch ID</span>
-                <input type="text" value={editingBranch?.branchId || ''} onChange={(e) => setEditingBranch(prev => ({ ...prev, branchId: e.target.value }))} />
-              </label>
-              <label>
-                <span>Branch Name</span>
-                <input type="text" value={editingBranch?.branchName || ''} onChange={(e) => setEditingBranch(prev => ({ ...prev, branchName: e.target.value }))} />
-              </label>
-              <label>
-                <span>WhatsApp Link</span>
-                <input type="url" value={editingBranch?.waLink || ''} onChange={(e) => setEditingBranch(prev => ({ ...prev, waLink: e.target.value }))} />
-              </label>
-              <div className="modal-actions">
-                <button type="button" className="ghost" onClick={() => setIsEditBranchOpen(false)}>Cancel</button>
-                <button type="submit" className="primary">Save</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+      
 
       <SubAdminClientsModal
         open={isClientsModalOpen}

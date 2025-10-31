@@ -3,10 +3,18 @@ import { clearToken, getToken } from '../../utils/auth';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { postJson } from '../../utils/api';
+import TimePeriodFilter from './TimePeriodFilter';
 
-function Sidebar({ section, setSection, onCreateSubAdmin, onAddBranch, onLogout }) {
+function Sidebar({ section, setSection, onCreateSubAdmin, onLogout, timePeriod, onTimePeriodChange, isMobileMenuOpen, onMobileMenuClose }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  // Close mobile menu when section changes
+  React.useEffect(() => {
+    if (isMobileMenuOpen && onMobileMenuClose) {
+      onMobileMenuClose();
+    }
+  }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleConfirmLogout() {
     try {
@@ -31,12 +39,17 @@ function Sidebar({ section, setSection, onCreateSubAdmin, onAddBranch, onLogout 
     }
   }
   return (
-    <aside className="sidebar">
-      <div className="sidebar-brand">
-        <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Admin" className="sidebar-logo" />
-        <span>Admin Panel</span>
-      </div>
-      <nav className="sidebar-nav">
+    <>
+      {/* Mobile backdrop */}
+      {isMobileMenuOpen && onMobileMenuClose && (
+        <div className="sidebar-mobile-backdrop" onClick={onMobileMenuClose} />
+      )}
+      <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-brand" onClick={() => setSection && setSection('dashboard')} title="Go to Dashboard" style={{ cursor: 'pointer' }}>
+          <img src={process.env.PUBLIC_URL + '/logo.png'} alt="Admin" className="sidebar-logo" />
+          <span>Admin Panel</span>
+        </div>
+        <nav className="sidebar-nav">
         <button className={`nav-item ${section === 'dashboard' ? 'active' : ''}`} onClick={() => setSection('dashboard')}>
           <span className="dot nav" /> Dashboard
         </button>
@@ -46,13 +59,15 @@ function Sidebar({ section, setSection, onCreateSubAdmin, onAddBranch, onLogout 
         <button className={`nav-item ${section === 'subs' ? 'active' : ''}`} onClick={() => setSection('subs')}>
           <span className="dot nav" /> Sub-Admins
         </button>
-        <button className={`nav-item ${section === 'branches' ? 'active' : ''}`} onClick={() => setSection('branches')}>
-          <span className="dot nav" /> Branches
-        </button>
         <button className="primary create-sub" onClick={onCreateSubAdmin}>Create Sub-Admin</button>
-        <button className="primary create-branch" onClick={onAddBranch}>Add Branch</button>
         <button className="logout-btn" onClick={() => setConfirmOpen(true)}>Logout</button>
       </nav>
+      
+      {/* Time Period Filter */}
+      <div className="sidebar-filter-section">
+        <div className="sidebar-filter-label">📊 Time Period</div>
+        <TimePeriodFilter selectedPeriod={timePeriod} onPeriodChange={onTimePeriodChange} />
+      </div>
       {confirmOpen ? (
         <div className="modal-backdrop" onClick={() => setConfirmOpen(false)}>
           <div className="modal confirm-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
@@ -71,6 +86,7 @@ function Sidebar({ section, setSection, onCreateSubAdmin, onAddBranch, onLogout 
         </div>
       ) : null}
     </aside>
+    </>
   );
 }
 
