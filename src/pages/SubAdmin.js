@@ -226,12 +226,7 @@ function SubAdmin() {
           <div className="welcome-card animate-in">
             <div className="welcome-icon">👋</div>
             <div>
-              <h2 className="welcome-heading">Welcome, Sub-Admin!</h2>
-              {currentUser && currentUser.email && (
-                <p className="welcome-text">
-                  <strong>Email:</strong> {currentUser.email}
-                </p>
-              )}
+              <h2 className="welcome-heading">Welcome, {currentUser?.username || 'Sub-Admin'}!</h2>
               <p className="welcome-text">Manage your clients and view important information</p>
             </div>
             <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>

@@ -18,6 +18,7 @@ function UsersTable({ users, page, totalPages, onPageChange, query, onQueryChang
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Sub-Admin</th>
                 <th>Status</th>
                 <th>Date & Time</th>
                 <th>Action</th>
@@ -33,6 +34,7 @@ function UsersTable({ users, page, totalPages, onPageChange, query, onQueryChang
                   </td>
                   <td className="muted">{u.email}</td>
                   <td><span className="badge">{u.role}</span></td>
+                  <td className="muted">{u.subAdmin || 'N/A'}</td>
                   <td><span className={`status ${u.status.toLowerCase()}`}>{u.status}</span></td>
                   <td className="muted">{u.createdAt ? new Date(u.createdAt).toLocaleString('en-IN', {
                     year: 'numeric',

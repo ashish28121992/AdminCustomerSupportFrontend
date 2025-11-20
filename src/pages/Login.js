@@ -8,7 +8,7 @@ import './Login.css';
 
 function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,10 +18,8 @@ function Login() {
 
   function validate() {
     const nextErrors = {};
-    if (!email) {
-      nextErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      nextErrors.email = 'Enter a valid email address';
+    if (!identifier) {
+      nextErrors.identifier = 'Username or email is required';
     }
     if (!password) {
       nextErrors.password = 'Password is required';
@@ -38,7 +36,7 @@ function Login() {
     setIsSubmitting(true);
     setApiError('');
     try {
-      const res = await postJson('/auth/login', { email, password });
+      const res = await postJson('/auth/login', { identifier, password });
       if (res?.success && res?.data?.accessToken) {
         saveToken(res.data.accessToken);
         const user = res?.data?.user || {};
@@ -61,7 +59,7 @@ function Login() {
         }
       } else {
         const msg = res?.message || 'Login failed';
-        setApiError('⚠️ Please fill correct credentials. Check your email and password.');
+        setApiError('⚠️ Please fill correct credentials. Check your username/email and password.');
         toast.error('Invalid credentials!', {
           duration: 3000,
           style: {
@@ -74,7 +72,7 @@ function Login() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setApiError('⚠️ Please fill correct credentials. Email or password is incorrect.');
+      setApiError('⚠️ Please fill correct credentials. Username/Email or password is incorrect.');
       toast.error('Login failed! Check your credentials.', {
         duration: 3000,
         style: {
@@ -107,21 +105,20 @@ function Login() {
           </div>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <div className={`field ${errors.email ? 'has-error' : ''}`}>
-            <label htmlFor="email">Email</label>
+          <div className={`field ${errors.identifier ? 'has-error' : ''}`}>
+            <label htmlFor="identifier">Username or Email</label>
             <input
-              id="email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? 'email-error' : undefined}
+              id="identifier"
+              type="text"
+              autoComplete="username"
+              placeholder="username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              aria-invalid={Boolean(errors.identifier)}
+              aria-describedby={errors.identifier ? 'identifier-error' : undefined}
             />
-            {errors.email ? (
-              <div id="email-error" className="error-text">{errors.email}</div>
+            {errors.identifier ? (
+              <div id="identifier-error" className="error-text">{errors.identifier}</div>
             ) : null}
           </div>
 

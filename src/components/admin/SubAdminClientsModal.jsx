@@ -7,13 +7,12 @@ function SubAdminClientsModal({ open, onClose, subAdmin, clients }) {
     <div className="modal-backdrop blur-backdrop" onClick={onClose}>
       <div className="modal subadmin-clients-modal full-screen-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="gradient-text">{subAdmin.branchName}'s Clients</h3>
+          <h3 className="gradient-text">{`${subAdmin.username || subAdmin.email || 'Sub-Admin'}'s Clients`}</h3>
           <button className="ghost" onClick={onClose}>Close</button>
         </div>
         <div className="modal-body">
           <div className="modal-info">
-            <p><strong>Sub-Admin:</strong> {subAdmin.email}</p>
-            <p><strong>Branch:</strong> {subAdmin.branchName}</p>
+            <p><strong>Sub-Admin:</strong> {subAdmin.username || subAdmin.email}</p>
             <p><strong>Total Clients:</strong> {clients.length}</p>
           </div>
 

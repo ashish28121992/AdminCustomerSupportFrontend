@@ -128,6 +128,9 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
               })
               .map((subAdmin, index) => {
                 const count = clientCounts[subAdmin.id] || 0;
+                const displayIdentifier =
+                  subAdmin.userId ||
+                  (subAdmin.username ? String(subAdmin.username).slice(0, 2).toUpperCase() : '?');
                 
                 return (
               <div
@@ -140,10 +143,10 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
               >
                 <div className="subadmin-card-header">
                   <div className="subadmin-avatar">
-                    <span>{subAdmin.userId || '?'}</span>
+                    <span>{displayIdentifier || '?'}</span>
                   </div>
                   <div className="subadmin-info">
-                    <p className="subadmin-email">{subAdmin.email}</p>
+                    <p className="subadmin-email">{subAdmin.username || subAdmin.email}</p>
                   </div>
                 </div>
                 <div className="subadmin-stats-single">

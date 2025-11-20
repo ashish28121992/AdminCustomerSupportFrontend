@@ -1,6 +1,7 @@
 import React from 'react';
 
 function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryChange, onDelete, onViewClients, onChangePassword }) {
+  console.log("subs",subs);
   return (
     <section className="tables-grid">
       <div className="panel table-panel animate-in">
@@ -14,8 +15,8 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
           <table className="table compact">
             <thead>
               <tr>
-                <th>Email</th>
-                <th>Sub Admin ID</th>
+                <th>Username</th>
+                <th>Nick Name</th>
                 <th>Status</th>
                 <th>WhatsApp Link</th>
                 <th>Created At</th>
@@ -25,8 +26,8 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
             </thead>
             <tbody>
               {subs.map((a, idx) => (
-                <tr key={a.id || a.email} style={{ animationDelay: `${idx * 70}ms` }}>
-                  <td className="muted">{a.email}</td>
+                <tr key={a.id || a.username } style={{ animationDelay: `${idx * 70}ms` }}>
+                  <td className="muted">{a.username }</td>
                   <td className="muted">{a.userId || '—'}</td>
                   <td className="muted">{a.isActive ? 'Active' : 'Inactive'}</td>
                   <td>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postJson, getJson, deleteJson } from '../utils/api';
 import { getToken } from '../utils/auth';
@@ -31,7 +31,7 @@ function Admin() {
   const [isCreatingSub, setIsCreatingSub] = useState(false);
   
   // Sub-admin form state
-  const [newSubEmail, setNewSubEmail] = useState('');
+  const [newSubUsername, setNewSubUsername] = useState('');
   const [newSubPassword, setNewSubPassword] = useState('');
   const [newSubUserId, setNewSubUserId] = useState('');
   const [newSubBranchId, setNewSubBranchId] = useState('');
@@ -62,15 +62,94 @@ function Admin() {
   const normalized = (s) => s.toLowerCase();
   
   // Map API clients to match UsersTable structure
-  const mappedClients = allClients.map(client => ({
-    id: client.userId || client.id,
-    name: client.name,
-    email: client.email,
-    role: 'Client',
-    status: client.isActive ? 'Active' : 'Inactive',
-    subAdmin: client.branchName || 'N/A',
-    createdAt: client.createdAt
-  }));
+  const mappedClients = useMemo(() => {
+    const lookup = new Map();
+    subAdmins.forEach((sub) => {
+      const identifier = sub.id || sub._id || '';
+      const displayName = sub.username || sub.email || sub.userId || '—';
+      const keys = [
+        sub.id,
+        sub._id,
+        sub.userId,
+        sub.username,
+        sub.email,
+      ].filter(Boolean);
+      keys.forEach((key) => {
+        lookup.set(String(key), {
+          id: identifier || String(key),
+          username: displayName,
+        });
+      });
+    });
+
+    const resolveSubAdminDetails = (client) => {
+      const candidateRefs = [
+        client.parentSubAdmin,
+        client.createdBy,
+        client.owner,
+        client.assignedTo,
+        client.subAdmin,
+        client.subadmin,
+      ];
+
+      for (const ref of candidateRefs) {
+        if (!ref) continue;
+
+        if (typeof ref === 'string' || typeof ref === 'number') {
+          const key = String(ref);
+          const matched = lookup.get(key);
+          if (matched) {
+            return { name: matched.username, id: matched.id };
+          }
+        } else if (typeof ref === 'object') {
+          const keys = [
+            ref.id,
+            ref._id,
+            ref.userId,
+            ref.username,
+            ref.email,
+            ref.name,
+          ];
+          for (const key of keys) {
+            if (!key) continue;
+            const matched = lookup.get(String(key));
+            if (matched) {
+              return { name: matched.username, id: matched.id };
+            }
+          }
+          if (ref.username || ref.name || ref.email) {
+            return {
+              name: ref.username || ref.name || ref.email,
+              id: ref.id || ref._id || ref.userId || '',
+            };
+          }
+        }
+      }
+
+      const fallbackName =
+        client.branchName ||
+        client.branch?.branchName ||
+        client.branch?.name ||
+        client.branch?.username ||
+        '';
+
+      return { name: fallbackName, id: '' };
+    };
+
+    return allClients.map((client) => {
+      const { name: subAdminName, id: subAdminId } = resolveSubAdminDetails(client);
+      return {
+        id: client.userId || client.id,
+        name: client.name || client.fullName || client.username || '—',
+        email: client.email || client.contactEmail || '—',
+        role: client.role || 'Client',
+        status: client.isActive ? 'Active' : 'Inactive',
+        subAdmin: subAdminName || 'N/A',
+        subAdminId,
+        createdAt: client.createdAt || client.createdAtUtc || client.createdOn,
+      };
+    });
+  }, [allClients, subAdmins]);
 
   const usersFiltered = mappedClients.filter((u) => {
     const q = normalized(usersQuery);
@@ -90,14 +169,13 @@ function Admin() {
     return (
       normalized(a.admin || '').includes(q) ||
       normalized(a.branchName || '').includes(q) ||
-      normalized(a.email || '').includes(q) ||
+      normalized(a.username || a.email || '').includes(q) ||
       normalized(a.userId || '').includes(q) ||
       normalized(String(a.isActive)).includes(q) ||
       normalized(a.branchWaLink || '').includes(q) ||
       normalized(a.createdAt || a.lastCreated || '').includes(q)
     );
   });
-  
   
 
   const usersTotalPages = Math.max(1, Math.ceil(usersFiltered.length / pageSize));
@@ -106,13 +184,13 @@ function Admin() {
   const subsStartIdx = (subsPage - 1) * pageSize;
   const pagedUsers = usersFiltered.slice(usersStartIdx, usersStartIdx + pageSize);
   const pagedSubs = subsFiltered.slice(subsStartIdx, subsStartIdx + pageSize);
+  
 
   async function handleCreateSubAdmin(e) {
     e.preventDefault();
     setFormError('');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newSubEmail)) {
-      setFormError('Valid email is required');
+    if (!newSubUsername.trim()) {
+      setFormError('Username is required');
       return;
     }
     if (!newSubPassword || newSubPassword.length < 8) {
@@ -134,7 +212,7 @@ function Admin() {
       setIsCreatingSub(true);
       const token = getToken();
       const payload = {
-        email: newSubEmail.trim(),
+        username: newSubUsername.trim(),
         password: newSubPassword,
         userId: newSubUserId.trim(),
         isActive: Boolean(newSubIsActive),
@@ -151,13 +229,13 @@ function Admin() {
         // Reflect in UI list (prepend a lightweight row)
         const newRow = {
           admin: (res.data.branch && res.data.branch.branchName) || res?.data?.branchName || '—',
-          email: res.data.email,
+          username: res.data.username || res.data.email,
           lastCreated: 'just now',
         };
         setSubAdmins((prev) => [newRow, ...prev]);
         toast.success('Sub-admin created');
         setIsCreateOpen(false);
-        setNewSubEmail('');
+        setNewSubUsername('');
         setNewSubPassword('');
         setNewSubUserId('');
         setNewSubBranchId('');
@@ -445,12 +523,13 @@ function Admin() {
       try {
         const token = getToken();
         const items = await fetchAllPages('/admins', token);
+        console.log("items",items)
         
         const mapped = items.map((it) => ({
           id: it.id || it._id,
           admin: (it.branch && it.branch.branchName) || '—',
           branchName: (it.branch && it.branch.branchName) || (it.branchSnapshot && it.branchSnapshot.name) || '—',
-          email: it.email,
+          username: it.username || it.email,
           userId: it.userId || '',
           isActive: Boolean(it.isActive),
           branchWaLink: it.waLink || (it.branchSnapshot && it.branchSnapshot.waLink) || (it.branch && it.branch.waLink) || '',
@@ -546,7 +625,7 @@ function Admin() {
         onClose={() => setIsCreateOpen(false)}
         onCreate={handleCreateSubAdmin}
         values={{
-          email: newSubEmail,
+          username: newSubUsername,
           password: newSubPassword,
           userId: newSubUserId,
           branchId: newSubBranchId,
@@ -555,7 +634,7 @@ function Admin() {
           permissions: { users_read: permUsersRead },
         }}
         onChange={(field, value) => {
-          if (field === 'email') setNewSubEmail(value);
+          if (field === 'username') setNewSubUsername(value);
           if (field === 'password') setNewSubPassword(value);
           if (field === 'userId') setNewSubUserId(value);
           if (field === 'branchId') setNewSubBranchId(value);

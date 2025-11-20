@@ -12,8 +12,8 @@ function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error,
         </div>
         <form className="modal-body" onSubmit={onCreate}>
           <label>
-            <span>Email</span>
-            <input type="email" placeholder="email@example.com" value={values.email} onChange={(e) => onChange('email', e.target.value)} />
+            <span>Username</span>
+            <input type="text" placeholder="subadmin username" value={values.username} onChange={(e) => onChange('username', e.target.value)} />
           </label>
           <label>
             <span>Password</span>
@@ -46,8 +46,8 @@ function CreateSubAdminModal({ open, onClose, onCreate, values, onChange, error,
             </div>
           </label>
           <label>
-            <span>Sub-Admin ID</span>
-            <input type="text" placeholder="SUB-1001" value={values.userId} onChange={(e) => onChange('userId', e.target.value)} />
+            <span>Nick Name</span>
+            <input type="text" placeholder="SUB" value={values.userId} onChange={(e) => onChange('userId', e.target.value)} />
           </label>
           <label>
             <span>WhatsApp Link</span>
