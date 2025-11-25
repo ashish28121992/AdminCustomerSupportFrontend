@@ -4,7 +4,7 @@ import { postJson } from '../../utils/api';
 import { getToken } from '../../utils/auth';
 import './ChangePasswordModal.css';
 
-function ChangePasswordModal({ open, onClose, onSuccess }) {
+function ChangePasswordModal({ open, onClose, onSuccess, forced = false }) {
   const [form, setForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -18,19 +18,23 @@ function ChangePasswordModal({ open, onClose, onSuccess }) {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const resetState = () => {
+    setForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmNewPassword: '',
+    });
+    setShowField({
+      currentPassword: false,
+      newPassword: false,
+      confirmNewPassword: false,
+    });
+    setError('');
+  };
+
   useEffect(() => {
     if (open) {
-      setForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: '',
-      });
-      setShowField({
-        currentPassword: false,
-        newPassword: false,
-        confirmNewPassword: false,
-      });
-      setError('');
+      resetState();
     }
   }, [open]);
 
@@ -59,12 +63,9 @@ function ChangePasswordModal({ open, onClose, onSuccess }) {
   };
 
   const handleClose = () => {
+    if (forced) return;
     setError('');
-    setForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmNewPassword: '',
-    });
+    resetState();
     onClose?.();
   };
 
@@ -114,7 +115,7 @@ function ChangePasswordModal({ open, onClose, onSuccess }) {
         icon: '🛡️',
       });
 
-      handleClose();
+      resetState();
       onSuccess?.();
     } catch (err) {
       const msg = err?.message || 'Failed to update password';
@@ -136,7 +137,14 @@ function ChangePasswordModal({ open, onClose, onSuccess }) {
   if (!open) return null;
 
   return (
-    <div className="sa-change-password-backdrop" onClick={handleClose}>
+    <div
+      className="sa-change-password-backdrop"
+      onClick={() => {
+        if (!forced) {
+          handleClose();
+        }
+      }}
+    >
       <div className="sa-change-password-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="sa-modal-hero">
           <div className="sa-hero-icon">🔐</div>
@@ -145,6 +153,13 @@ function ChangePasswordModal({ open, onClose, onSuccess }) {
             <p>Keep your account secure with a strong password that only you know.</p>
           </div>
         </div>
+
+        {forced ? (
+          <div className="sa-lock-banner">
+            <span className="sa-lock-icon">⚠️</span>
+            <p>Please update your password to continue.</p>
+          </div>
+        ) : null}
 
         <form className="sa-change-password-form" onSubmit={handleSubmit}>
           <div className="sa-form-grid">
@@ -251,9 +266,13 @@ function ChangePasswordModal({ open, onClose, onSuccess }) {
           </div>
 
           <div className="sa-modal-actions">
-            <button type="button" className="sa-btn ghost" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
-            </button>
+            {!forced ? (
+              <button type="button" className="sa-btn ghost" onClick={handleClose} disabled={isSubmitting}>
+                Cancel
+              </button>
+            ) : (
+              <div />
+            )}
             <button type="submit" className="sa-btn primary" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>

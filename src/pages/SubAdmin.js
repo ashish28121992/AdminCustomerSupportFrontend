@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getToken, clearToken, getUser } from '../utils/auth';
+import { getToken, clearToken, getUser, isSubadminPasswordResetPending, markSubadminPasswordResetComplete } from '../utils/auth';
 import { postJson, getJson, putJson } from '../utils/api';
 import toast from 'react-hot-toast';
 import AddUserModal from '../components/subadmin/AddUserModal';
@@ -37,6 +37,7 @@ function SubAdmin() {
   const [editError, setEditError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isForcedPasswordChange, setIsForcedPasswordChange] = useState(false);
 
   async function handleConfirmLogout() {
     try {
@@ -63,6 +64,9 @@ function SubAdmin() {
   useEffect(() => {
     const user = getUser();
     setCurrentUser(user);
+    const needsReset = isSubadminPasswordResetPending(user);
+    setIsForcedPasswordChange(needsReset);
+    setIsChangePasswordOpen(needsReset);
   }, []);
 
   // Helper function to fetch all pages of data
@@ -206,6 +210,10 @@ function SubAdmin() {
   }
 
   function handlePasswordChangeSuccess() {
+    if (currentUser) {
+      markSubadminPasswordResetComplete(currentUser);
+    }
+    setIsForcedPasswordChange(false);
     setIsChangePasswordOpen(false);
     setTimeout(() => {
       clearToken();
@@ -226,10 +234,6 @@ function SubAdmin() {
           <h1>SubAdmin Dashboard</h1>
         </div>
         <div className="header-actions">
-          <button className="change-password-btn" onClick={() => setIsChangePasswordOpen(true)}>
-            <span className="btn-icon">🛡️</span>
-            Change Password
-          </button>
           <button className="logout-btn" onClick={() => setConfirmOpen(true)}>Logout</button>
         </div>
       </header>
@@ -296,8 +300,12 @@ function SubAdmin() {
 
       <ChangePasswordModal
         open={isChangePasswordOpen}
-        onClose={() => setIsChangePasswordOpen(false)}
+        onClose={() => {
+          if (isForcedPasswordChange) return;
+          setIsChangePasswordOpen(false);
+        }}
         onSuccess={handlePasswordChangeSuccess}
+        forced={isForcedPasswordChange}
       />
 
       {confirmOpen ? (

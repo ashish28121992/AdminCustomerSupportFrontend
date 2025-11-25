@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postJson } from '../utils/api';
-import { saveToken, saveUserRole, saveUser } from '../utils/auth';
+import { saveToken, saveUserRole, saveUser, deriveSubadminPasswordResetRequirement, markSubadminPasswordResetPending } from '../utils/auth';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
 import toast from 'react-hot-toast';
 import './Login.css';
@@ -53,6 +53,8 @@ function Login() {
           }
         });
         if (role === 'sub') {
+          const requiresReset = deriveSubadminPasswordResetRequirement(user);
+          markSubadminPasswordResetPending(user, requiresReset);
           navigate('/subadmin', { replace: true });
         } else {
           navigate('/admin', { replace: true });
