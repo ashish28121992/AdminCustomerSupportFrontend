@@ -33,9 +33,25 @@ function EditClientModal({ open, onClose, onUpdate, values, onChange, error, sub
             <span>Phone Number</span>
             <input 
               type="tel" 
-              placeholder="+1 234 567 8900" 
+              placeholder="+91 1234567890" 
               value={values.phone} 
-              onChange={(e) => onChange('phone', e.target.value)}
+              onChange={(e) => {
+                let phoneValue = e.target.value;
+                // If user starts typing without +91, add it automatically
+                if (phoneValue && !phoneValue.startsWith('+91')) {
+                  // Remove any existing +91 if user pasted something with it
+                  phoneValue = phoneValue.replace(/^\+91\s*/, '');
+                  phoneValue = '+91' + phoneValue;
+                }
+                onChange('phone', phoneValue);
+              }}
+              onFocus={(e) => {
+                // If field is empty or doesn't start with +91, set default to +91
+                if (!e.target.value || !e.target.value.startsWith('+91')) {
+                  const currentValue = e.target.value.replace(/^\+91\s*/, '');
+                  onChange('phone', '+91' + currentValue);
+                }
+              }}
               required
             />
           </label>

@@ -30,23 +30,27 @@ function AddUserModal({ open, onClose, onCreate, values, onChange, error, submit
           </label>
 
           <label>
-            <span>Email</span>
-            <input 
-              type="email" 
-              placeholder="user@example.com" 
-              value={values.email} 
-              onChange={(e) => onChange('email', e.target.value)}
-              required
-            />
-          </label>
-
-          <label>
             <span>Phone Number</span>
             <input 
               type="tel" 
-              placeholder="+1 234 567 8900" 
+              placeholder="+91 1234567890" 
               value={values.phone} 
-              onChange={(e) => onChange('phone', e.target.value)}
+              onChange={(e) => {
+                let phoneValue = e.target.value;
+                // If user starts typing without +91, add it automatically
+                if (phoneValue && !phoneValue.startsWith('+91')) {
+                  // Remove any existing +91 if user pasted something with it
+                  phoneValue = phoneValue.replace(/^\+91\s*/, '');
+                  phoneValue = '+91' + phoneValue;
+                }
+                onChange('phone', phoneValue);
+              }}
+              onFocus={(e) => {
+                // If field is empty, set default to +91
+                if (!e.target.value) {
+                  onChange('phone', '+91');
+                }
+              }}
               required
             />
           </label>

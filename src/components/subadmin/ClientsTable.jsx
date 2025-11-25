@@ -24,9 +24,7 @@ function ClientsTable({ clients, page, totalPages, onPageChange, onEdit, totalCo
                 <tr>
                   <th>Client</th>
                   <th>User ID</th>
-                  <th>Email</th>
                   <th>Phone</th>
-                  <th>Branch</th>
                   <th>Status</th>
                   <th>WhatsApp</th>
                   <th>Actions</th>
@@ -44,9 +42,7 @@ function ClientsTable({ clients, page, totalPages, onPageChange, onEdit, totalCo
                       </div>
                     </td>
                     <td className="muted">{client.userId}</td>
-                    <td className="muted">{client.email}</td>
                     <td className="muted">{client.phone}</td>
-                    <td className="muted">{client.branchName || 'N/A'}</td>
                     <td>
                       <span className={`status-badge-small ${client.isActive ? 'active' : 'inactive'}`}>
                         {client.isActive ? '● Active' : '○ Inactive'}

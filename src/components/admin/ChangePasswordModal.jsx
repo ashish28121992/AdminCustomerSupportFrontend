@@ -113,15 +113,7 @@ function ChangePasswordModal({ open, onClose, subAdmin }) {
             <h3>Sub-Admin Details</h3>
             <div className="details-grid">
               <div className="detail-item">
-                <span className="detail-label">Branch Name:</span>
-                <span className="detail-value">{subAdmin.branchName || '—'}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Email:</span>
-                <span className="detail-value">{subAdmin.email}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">User ID:</span>
+                <span className="detail-label">Nick Name:</span>
                 <span className="detail-value">{subAdmin.userId || '—'}</span>
               </div>
               <div className="detail-item">

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import AddUserModal from '../components/subadmin/AddUserModal';
 import EditClientModal from '../components/subadmin/EditClientModal';
 import ClientsTable from '../components/subadmin/ClientsTable';
+import ChangePasswordModal from '../components/subadmin/ChangePasswordModal';
 import './Admin.css';
 import './SubAdmin.css';
 
@@ -17,7 +18,6 @@ function SubAdmin() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [userForm, setUserForm] = useState({
     name: '',
-    email: '',
     phone: '',
     userId: ''
   });
@@ -36,6 +36,7 @@ function SubAdmin() {
   });
   const [editError, setEditError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   async function handleConfirmLogout() {
     try {
@@ -129,7 +130,7 @@ function SubAdmin() {
     setUserError('');
     
     // Validation
-    if (!userForm.name || !userForm.email || !userForm.phone || !userForm.userId) {
+    if (!userForm.name || !userForm.phone || !userForm.userId) {
       setUserError('All fields are required');
       return;
     }
@@ -140,8 +141,7 @@ function SubAdmin() {
       const payload = {
         userId: userForm.userId,
         name: userForm.name,
-        phone: userForm.phone,
-        email: userForm.email
+        phone: userForm.phone
       };
       
       const response = await postJson('/clients/create', payload, {
@@ -151,7 +151,7 @@ function SubAdmin() {
       if (response?.success) {
         toast.success('Client created successfully!');
         setIsAddUserOpen(false);
-        setUserForm({ name: '', email: '', phone: '', userId: '' });
+        setUserForm({ name: '', phone: '', userId: '' });
         fetchClients(); // Refresh clients list
       }
     } catch (err) {
@@ -205,6 +205,14 @@ function SubAdmin() {
     }
   }
 
+  function handlePasswordChangeSuccess() {
+    setIsChangePasswordOpen(false);
+    setTimeout(() => {
+      clearToken();
+      navigate('/', { replace: true });
+    }, 700);
+  }
+
   return (
     <div className="admin-page">
       <div className="admin-gradient" />
@@ -218,6 +226,10 @@ function SubAdmin() {
           <h1>SubAdmin Dashboard</h1>
         </div>
         <div className="header-actions">
+          <button className="change-password-btn" onClick={() => setIsChangePasswordOpen(true)}>
+            <span className="btn-icon">🛡️</span>
+            Change Password
+          </button>
           <button className="logout-btn" onClick={() => setConfirmOpen(true)}>Logout</button>
         </div>
       </header>
@@ -257,7 +269,7 @@ function SubAdmin() {
         open={isAddUserOpen}
         onClose={() => {
           setIsAddUserOpen(false);
-          setUserForm({ name: '', email: '', phone: '', userId: '' });
+          setUserForm({ name: '', phone: '', userId: '' });
           setUserError('');
         }}
         onCreate={handleCreateUser}
@@ -280,6 +292,12 @@ function SubAdmin() {
         onChange={(field, value) => setEditForm(prev => ({ ...prev, [field]: value }))}
         error={editError}
         submitting={isUpdating}
+      />
+
+      <ChangePasswordModal
+        open={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+        onSuccess={handlePasswordChangeSuccess}
       />
 
       {confirmOpen ? (
