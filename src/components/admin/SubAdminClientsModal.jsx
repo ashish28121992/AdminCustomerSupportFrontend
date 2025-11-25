@@ -25,12 +25,11 @@ function SubAdminClientsModal({ open, onClose, subAdmin, clients }) {
               <table className="clients-modal-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '18%' }}>Name</th>
-                    <th style={{ width: '12%' }}>User ID</th>
-                    <th style={{ width: '22%' }}>Email</th>
-                    <th style={{ width: '13%' }}>Phone</th>
-                    <th style={{ width: '10%' }}>Status</th>
-                    <th style={{ width: '25%' }}>WhatsApp Link</th>
+                    <th style={{ width: '22%' }}>Name</th>
+                    <th style={{ width: '18%' }}>User ID</th>
+                    <th style={{ width: '18%' }}>Phone</th>
+                    <th style={{ width: '12%' }}>Status</th>
+                    <th style={{ width: '30%' }}>WhatsApp Link</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -38,7 +37,6 @@ function SubAdminClientsModal({ open, onClose, subAdmin, clients }) {
                     <tr key={client.id || index}>
                       <td className="client-name-cell">{client.name}</td>
                       <td className="muted">{client.userId}</td>
-                      <td className="muted">{client.email}</td>
                       <td className="muted">{client.phone}</td>
                       <td>
                         <span className={`status-badge-small ${client.isActive ? 'active' : 'inactive'}`}>

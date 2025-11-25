@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { postJson, getJson, deleteJson } from '../utils/api';
+import { postJson, getJson, deleteJson, putJson } from '../utils/api';
 import { getToken } from '../utils/auth';
 import Header from '../components/admin/Header';
 import Sidebar from '../components/admin/Sidebar';
@@ -10,6 +10,7 @@ import SubAdminsTable from '../components/admin/SubAdminsTable';
 import CreateSubAdminModal from '../components/admin/CreateSubAdminModal';
 import SubAdminClientsModal from '../components/admin/SubAdminClientsModal';
 import ChangePasswordModal from '../components/admin/ChangePasswordModal';
+import UpdateSubAdminModal from '../components/admin/UpdateSubAdminModal';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
@@ -58,6 +59,12 @@ function Admin() {
   // Modal state for changing sub-admin password
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [selectedSubAdminForPassword, setSelectedSubAdminForPassword] = useState(null);
+
+  // Modal state for updating sub-admin
+  const [isUpdateSubAdminOpen, setIsUpdateSubAdminOpen] = useState(false);
+  const [selectedSubAdminForUpdate, setSelectedSubAdminForUpdate] = useState(null);
+  const [isUpdatingSub, setIsUpdatingSub] = useState(false);
+  const [updateError, setUpdateError] = useState('');
 
   const normalized = (s) => s.toLowerCase();
   
@@ -138,18 +145,73 @@ function Admin() {
 
     return allClients.map((client) => {
       const { name: subAdminName, id: subAdminId } = resolveSubAdminDetails(client);
+      const phone =
+        client.phone ||
+        client.phoneNumber ||
+        client.whatsappNumber ||
+        client.contactNumber ||
+        client.mobile ||
+        '';
+      const lookupKeys = Array.from(
+        new Set(
+          [
+            client.userId,
+            client.id,
+            client.email,
+            client.username,
+            client.name,
+            client.fullName,
+            client.phone,
+            client.phoneNumber,
+            client.whatsappNumber,
+            client.contactNumber,
+            client.mobile,
+          ]
+            .filter(Boolean)
+            .map((val) => String(val).toLowerCase())
+        )
+      );
+
       return {
         id: client.userId || client.id,
         name: client.name || client.fullName || client.username || '—',
         email: client.email || client.contactEmail || '—',
+        phone,
         role: client.role || 'Client',
         status: client.isActive ? 'Active' : 'Inactive',
         subAdmin: subAdminName || 'N/A',
         subAdminId,
         createdAt: client.createdAt || client.createdAtUtc || client.createdOn,
+        lookupKeys,
       };
     });
   }, [allClients, subAdmins]);
+
+  const clientDetailsLookup = useMemo(() => {
+    const map = new Map();
+    mappedClients.forEach((client) => {
+      (client.lookupKeys || []).forEach((key) => {
+        if (!map.has(key)) {
+          map.set(key, client);
+        }
+      });
+    });
+    return map;
+  }, [mappedClients]);
+
+  const clientSubAdminLookup = useMemo(() => {
+    const map = new Map();
+    mappedClients.forEach((client) => {
+      const subName = client.subAdmin || '';
+      if (!subName) return;
+      (client.lookupKeys || []).forEach((key) => {
+        if (!map.has(key)) {
+          map.set(key, subName);
+        }
+      });
+    });
+    return map;
+  }, [mappedClients]);
 
   const usersFiltered = mappedClients.filter((u) => {
     const q = normalized(usersQuery);
@@ -298,6 +360,59 @@ function Admin() {
     setIsChangePasswordOpen(true);
   }
 
+  // Function to open update modal for a sub-admin
+  function handleUpdateSubAdmin(subAdmin) {
+    setSelectedSubAdminForUpdate(subAdmin);
+    setIsUpdateSubAdminOpen(true);
+    setUpdateError('');
+  }
+
+  // Function to handle sub-admin update
+  async function handleUpdateSubAdminSubmit(waLink) {
+    if (!selectedSubAdminForUpdate) return;
+    
+    setUpdateError('');
+    setIsUpdatingSub(true);
+
+    try {
+      const token = getToken();
+      const subAdminId = selectedSubAdminForUpdate.id;
+      
+      const res = await putJson(`/admins/${subAdminId}`, 
+        { waLink: waLink.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res?.success && res?.data) {
+        // Update the sub admin in the state
+        setSubAdmins(prev => prev.map(sub => {
+          if (sub.id === subAdminId) {
+            return {
+              ...sub,
+              branchWaLink: res.data.branchWaLink || waLink.trim()
+            };
+          }
+          return sub;
+        }));
+        
+        toast.success('Sub-admin updated successfully');
+        setIsUpdateSubAdminOpen(false);
+        setSelectedSubAdminForUpdate(null);
+      } else {
+        const msg = res?.message || 'Failed to update sub-admin';
+        setUpdateError(msg);
+        toast.error(msg);
+      }
+    } catch (err) {
+      console.error('Update sub-admin error:', err);
+      const msg = err?.message || 'Network error';
+      setUpdateError(msg);
+      toast.error(msg);
+    } finally {
+      setIsUpdatingSub(false);
+    }
+  }
+
   // Helper function to fetch all pages of data
   const fetchAllPages = async (endpoint, token) => {
     let allItems = [];
@@ -444,15 +559,114 @@ function Admin() {
           it.activeUsers ??
           it.unique ??
           it.uniqueClients ?? 0;
+        const collectVisitLookupKeys = (visit) =>
+          [
+            visit.userId,
+            visit.user_id,
+            visit.clientId,
+            visit.client_id,
+            visit.username,
+            visit.userName,
+            visit.clientUsername,
+            visit.name,
+            visit.clientName,
+            visit.email,
+            visit.clientEmail,
+            visit.phone,
+            visit.clientPhone,
+            visit.contactNumber,
+            visit.whatsappNumber,
+            visit.phoneNumber,
+            visit.mobile,
+          ]
+            .filter(Boolean)
+            .map((val) => String(val).toLowerCase());
+
+        const findClientDetailsForVisit = (visit) => {
+          const keys = collectVisitLookupKeys(visit);
+          for (const key of keys) {
+            const details = clientDetailsLookup.get(key);
+            if (details) return details;
+          }
+          return null;
+        };
+
+        const resolveVisitSubAdmin = (visit) => {
+          if (!visit || typeof visit !== 'object') return visit || '';
+          const candidateRefs = [
+            visit.subAdmin,
+            visit.subadmin,
+            visit.subAdminName,
+            visit.assignedTo,
+            visit.owner,
+            visit.createdBy,
+            visit.parentSubAdmin,
+            visit.branch?.manager,
+            visit.branch?.owner,
+          ];
+          for (const ref of candidateRefs) {
+            if (!ref) continue;
+            if (typeof ref === 'string') {
+              if (ref.trim()) return ref;
+            } else if (typeof ref === 'object') {
+              const refName =
+                ref.username ||
+                ref.name ||
+                ref.fullName ||
+                ref.email ||
+                ref.userId ||
+                ref.branchName ||
+                ref.branch?.name;
+              if (refName) return refName;
+            }
+          }
+          const fallbackKeys = collectVisitLookupKeys(visit);
+          for (const key of fallbackKeys) {
+            const matched = clientSubAdminLookup.get(key);
+            if (matched) return matched;
+          }
+          return (
+            visit.branchName ||
+            visit.branch?.branchName ||
+            visit.branch?.name ||
+            ''
+          );
+        };
+
         const visitors = Array.isArray(it.visits)
-          ? it.visits.map(v => ({
-              userId: v.userId || '',
-              name: v.clientName || v.name || '',
-              email: v.clientEmail || v.email || '',
-              phone: v.clientPhone || v.phone || '',
-              branchName: v.branchName || '',
-              visitedAt: v.visitedAt || v.timestamp || '',
-            }))
+          ? it.visits.map((v) => {
+              const username =
+                v.username ||
+                v.clientUsername ||
+                v.userName ||
+                v.user_id ||
+                v.userId ||
+                '';
+              const matchedClient = findClientDetailsForVisit(v);
+              const displayName =
+                v.clientName ||
+                v.name ||
+                matchedClient?.name ||
+                '';
+              const phoneNumber =
+                v.clientPhone ||
+                v.phone ||
+                v.contactNumber ||
+                v.whatsappNumber ||
+                v.phoneNumber ||
+                matchedClient?.phone ||
+                '';
+              return {
+                userId: v.userId || username || '',
+                username,
+                name: displayName,
+                email: v.clientEmail || v.email || '',
+                phone: phoneNumber,
+                branchName: v.branchName || '',
+                visitedAt: v.visitedAt || v.timestamp || '',
+                subAdminName: resolveVisitSubAdmin(v),
+              };
+            })
           : [];
         return {
           date: typeof date === 'string' ? date : new Date(date).toLocaleString(),
@@ -532,7 +746,7 @@ function Admin() {
           username: it.username || it.email,
           userId: it.userId || '',
           isActive: Boolean(it.isActive),
-          branchWaLink: it.waLink || (it.branchSnapshot && it.branchSnapshot.waLink) || (it.branch && it.branch.waLink) || '',
+          branchWaLink: it.branchWaLink || it.waLink || (it.branchSnapshot && it.branchSnapshot.waLink) || (it.branch && it.branch.waLink) || '',
           createdAt: it.createdAt,
         }));
         setSubAdmins(mapped);
@@ -613,6 +827,7 @@ function Admin() {
               }}
               onViewClients={handleViewSubAdminClients}
               onChangePassword={handleChangePassword}
+              onUpdate={handleUpdateSubAdmin}
             />
           ) : null}
           
@@ -666,6 +881,19 @@ function Admin() {
           setSelectedSubAdminForPassword(null);
         }}
         subAdmin={selectedSubAdminForPassword}
+      />
+
+      <UpdateSubAdminModal
+        open={isUpdateSubAdminOpen}
+        onClose={() => {
+          setIsUpdateSubAdminOpen(false);
+          setSelectedSubAdminForUpdate(null);
+          setUpdateError('');
+        }}
+        onUpdate={handleUpdateSubAdminSubmit}
+        subAdmin={selectedSubAdminForUpdate}
+        submitting={isUpdatingSub}
+        error={updateError}
       />
     </div>
   );

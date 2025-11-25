@@ -1,6 +1,6 @@
 import React from 'react';
 
-function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryChange, onDelete, onViewClients, onChangePassword }) {
+function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryChange, onDelete, onViewClients, onChangePassword, onUpdate }) {
   console.log("subs",subs);
   return (
     <section className="tables-grid">
@@ -47,7 +47,17 @@ function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryCh
                       🔐 Change
                     </button>
                   </td>
-                  <td><button className="btn-danger" onClick={() => onDelete(a.id)}>Delete</button></td>
+                  <td>
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => onUpdate && onUpdate(a)}
+                      title="Update WhatsApp link for this sub-admin"
+                      style={{ marginRight: '8px' }}
+                    >
+                      ✏️ Update
+                    </button>
+                    <button className="btn-danger" onClick={() => onDelete(a.id)}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

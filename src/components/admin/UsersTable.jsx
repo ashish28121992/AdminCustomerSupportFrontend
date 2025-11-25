@@ -16,6 +16,7 @@ function UsersTable({ users, page, totalPages, onPageChange, query, onQueryChang
               <tr>
                 <th>ID</th>
                 <th>Name</th>
+                <th>Phone</th>
                 <th>Role</th>
                 <th>Sub-Admin</th>
                 <th>Status</th>
@@ -31,6 +32,7 @@ function UsersTable({ users, page, totalPages, onPageChange, query, onQueryChang
                     <div className="avatar tiny" />
                     <span>{u.name}</span>
                   </td>
+                  <td className="muted">{u.phone || '—'}</td>
                   <td><span className="badge">{u.role}</span></td>
                   <td className="muted">{u.subAdmin || 'N/A'}</td>
                   <td><span className={`status ${u.status.toLowerCase()}`}>{u.status}</span></td>

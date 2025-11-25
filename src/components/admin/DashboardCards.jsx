@@ -280,22 +280,52 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
                                   <div style={{ fontSize: '0.85rem', color: '#a5b4fc', marginBottom: '0.5rem', fontWeight: 600 }}>
                                     Visitors ({row.visitors.length})
                                   </div>
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                                    {row.visitors.map((v, i) => (
-                                      <div key={i} style={{
-                                        background: 'rgba(99,102,241,0.06)',
-                                        border: '1px solid rgba(99,102,241,0.18)',
-                                        borderRadius: 8,
-                                        padding: '0.5rem 0.6rem'
-                                      }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                                          <strong style={{ color: '#e6e8f0', fontSize: '0.95rem' }}>{v.name || v.userId || 'Unknown'}</strong>
-                                          <span style={{ color: '#93c5fd', fontSize: '0.75rem' }}>{v.userId || ''}</span>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                                    {row.visitors.map((v, i) => {
+                                      const usernameLabel = v.username || v.userId || '—';
+                                      const subAdminLabel = v.subAdminName || v.branchName || '—';
+                                      const phoneLabel = v.phone || '—';
+                                      const visitedLabel = v.visitedAt ? new Date(v.visitedAt).toLocaleString() : '—';
+                                      return (
+                                        <div
+                                          key={i}
+                                          style={{
+                                            background: 'rgba(99,102,241,0.06)',
+                                            border: '1px solid rgba(99,102,241,0.18)',
+                                            borderRadius: 10,
+                                            padding: '0.75rem 0.9rem',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '0.35rem'
+                                          }}
+                                        >
+                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                            <div>
+                                              <div style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Client Name</div>
+                                              <strong style={{ color: '#e6e8f0', fontSize: '0.95rem' }}>{v.name || usernameLabel || 'Unknown'}</strong>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                              <div style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Client ID</div>
+                                              <span style={{ color: '#93c5fd', fontSize: '0.85rem', fontWeight: 600 }}>{v.userId || usernameLabel || '—'}</span>
+                                            </div>
+                                          </div>
+                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: '0.5rem' }}>
+                                            <div>
+                                              <div style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Sub-Admin</div>
+                                              <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 600 }}>{subAdminLabel}</div>
+                                            </div>
+                                            <div>
+                                              <div style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Phone</div>
+                                              <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontWeight: 600 }}>{phoneLabel}</div>
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>Visited At</div>
+                                            <div style={{ color: '#cbd5e1', fontSize: '0.8rem' }}>{visitedLabel}</div>
+                                          </div>
                                         </div>
-                                        <div style={{ color: '#cbd5e1', fontSize: '0.8rem', marginTop: 4 }}>{v.branchName || '—'}</div>
-                                        <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: 2 }}>{v.visitedAt ? new Date(v.visitedAt).toLocaleString() : ''}</div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               </td>
