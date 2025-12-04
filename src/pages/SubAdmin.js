@@ -101,7 +101,6 @@ function SubAdmin() {
         if (currentPageNum > 100) break;
       }
     } catch (err) {
-      console.error(`Error fetching all pages from ${endpoint}:`, err);
       throw err;
     }
     
@@ -123,7 +122,6 @@ function SubAdmin() {
       // Calculate total pages for client-side pagination (10 items per page)
       setTotalPages(Math.ceil(allClients.length / 10));
     } catch (err) {
-      console.error('Error fetching clients:', err);
       toast.error('Failed to load clients');
     } finally {
       setIsLoadingClients(false);
@@ -152,11 +150,24 @@ function SubAdmin() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response?.success) {
+      if (response?.success && response?.data) {
+        // Optimistically update the clients state immediately
+        const newClient = {
+          id: response.data.id || response.data._id,
+          userId: response.data.userId || userForm.userId,
+          name: response.data.name || userForm.name,
+          phone: response.data.phone || userForm.phone,
+          isActive: response.data.isActive !== undefined ? response.data.isActive : true,
+          branchWaLink: response.data.branchWaLink || response.data.waLink || '',
+          createdAt: response.data.createdAt || new Date().toISOString(),
+        };
+        // Add new client to the beginning of the list
+        setClients((prev) => [newClient, ...prev]);
+        // Update total pages
+        setTotalPages(Math.ceil((clients.length + 1) / 10));
         toast.success('Client created successfully!');
         setIsAddUserOpen(false);
         setUserForm({ name: '', phone: '', userId: '' });
-        fetchClients(); // Refresh clients list
       }
     } catch (err) {
       const msg = err?.message || 'Failed to create client';
@@ -194,11 +205,22 @@ function SubAdmin() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response?.success) {
+      if (response?.success && response?.data) {
+        // Optimistically update the client in state immediately
+        const updatedClient = {
+          ...editingClient,
+          name: response.data.name || editForm.name,
+          phone: response.data.phone || editForm.phone,
+          isActive: response.data.isActive !== undefined ? response.data.isActive : editForm.isActive,
+          branchWaLink: response.data.branchWaLink || response.data.waLink || editingClient.branchWaLink || '',
+        };
+        // Update the client in the list
+        setClients((prev) => prev.map(client => 
+          client.id === editingClient.id ? updatedClient : client
+        ));
         toast.success('Client updated successfully!');
         setIsEditClientOpen(false);
         setEditingClient(null);
-        fetchClients(); // Refresh clients list
       }
     } catch (err) {
       const msg = err?.message || 'Failed to update client';

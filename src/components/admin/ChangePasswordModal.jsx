@@ -72,7 +72,6 @@ function ChangePasswordModal({ open, onClose, subAdmin }) {
         toast.error(msg);
       }
     } catch (err) {
-      console.error('Reset password error:', err);
       const msg = err?.message || 'Network error. Please try again.';
       setError(msg);
       toast.error(msg, {

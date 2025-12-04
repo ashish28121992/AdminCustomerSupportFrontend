@@ -1,7 +1,6 @@
 import React from 'react';
 
 function SubAdminsTable({ subs, page, totalPages, onPageChange, query, onQueryChange, onDelete, onViewClients, onChangePassword, onUpdate }) {
-  console.log("subs",subs);
   return (
     <section className="tables-grid">
       <div className="panel table-panel animate-in">

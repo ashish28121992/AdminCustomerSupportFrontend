@@ -73,7 +73,6 @@ function Login() {
         });
       }
     } catch (error) {
-      console.error('Login error:', error);
       setApiError('⚠️ Please fill correct credentials. Username/Email or password is incorrect.');
       toast.error('Login failed! Check your credentials.', {
         duration: 3000,

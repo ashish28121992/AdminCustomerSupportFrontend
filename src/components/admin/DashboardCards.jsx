@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, onViewClients, timePeriod = 'realtime', analyticsData = [], analyticsSummary = null }) {
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive'
+function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, onViewClients, timePeriod = 'realtime', analyticsData = [], analyticsSummary = null, allClients = [] }) {
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'active', 'inactive' - for sub-admins
+  const [userStatusFilter, setUserStatusFilter] = useState(null); // null, 'active', 'inactive' - for users
   const [showTable, setShowTable] = useState(false);
+  const [showUsersTable, setShowUsersTable] = useState(false);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const prevTimePeriodRef = React.useRef(timePeriod);
 
@@ -11,7 +13,6 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
   useEffect(() => {
     // Only show table if timePeriod actually changed (not on initial mount)
     if (prevTimePeriodRef.current !== timePeriod) {
-      console.log('Time period changed from', prevTimePeriodRef.current, 'to', timePeriod);
       setShowTable(true);
       prevTimePeriodRef.current = timePeriod;
     }
@@ -19,10 +20,16 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
   
   const rowsToRender = Array.isArray(analyticsData) ? analyticsData : [];
   
+  // Calculate active/inactive counts for clients
+  const activeClientsCount = allClients.filter(c => c.status === 'Active').length;
+  const inactiveClientsCount = allClients.filter(c => c.status === 'Inactive').length;
+  
   const summaryCards = [
     {
       title: 'Total Clients',
       count: usersCount,
+      active: activeClientsCount,
+      inactive: inactiveClientsCount,
       icon: '👥',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       hoverColor: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
@@ -75,15 +82,33 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
               {card.active !== undefined && (
                 <div className="card-breakdown">
                   <span 
-                    className={`active-count ${statusFilter === 'active' ? 'filter-active' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); setStatusFilter(statusFilter === 'active' ? 'all' : 'active'); }}
+                    className={`active-count ${(card.title === 'Total Clients' ? userStatusFilter === 'active' : statusFilter === 'active') ? 'filter-active' : ''}`}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (card.title === 'Total Clients') {
+                        const newFilter = userStatusFilter === 'active' ? null : 'active';
+                        setUserStatusFilter(newFilter);
+                        setShowUsersTable(newFilter !== null);
+                      } else {
+                        setStatusFilter(statusFilter === 'active' ? 'all' : 'active');
+                      }
+                    }}
                     style={{ cursor: 'pointer' }}
                   >
                     ✓ {card.active} Active
                   </span>
                   <span 
-                    className={`inactive-count ${statusFilter === 'inactive' ? 'filter-active' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); setStatusFilter(statusFilter === 'inactive' ? 'all' : 'inactive'); }}
+                    className={`inactive-count ${(card.title === 'Total Clients' ? userStatusFilter === 'inactive' : statusFilter === 'inactive') ? 'filter-active' : ''}`}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (card.title === 'Total Clients') {
+                        const newFilter = userStatusFilter === 'inactive' ? null : 'inactive';
+                        setUserStatusFilter(newFilter);
+                        setShowUsersTable(newFilter !== null);
+                      } else {
+                        setStatusFilter(statusFilter === 'inactive' ? 'all' : 'inactive');
+                      }
+                    }}
                     style={{ cursor: 'pointer' }}
                   >
                     ✗ {card.inactive} Inactive
@@ -183,7 +208,6 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
       {showTable && createPortal(
         <>
           <div className="table-overlay-backdrop" onClick={() => {
-            console.log('Backdrop clicked, closing table');
             setShowTable(false);
           }} />
           <div className="period-data-table-overlay animate-in">
@@ -338,6 +362,93 @@ function DashboardCards({ usersCount, subAdmins, onNavigate, clientCounts = {}, 
                 </table>
               </div>
             )}
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* Users Table Overlay */}
+      {showUsersTable && createPortal(
+        <>
+          <div className="table-overlay-backdrop" onClick={() => {
+            setShowUsersTable(false);
+            setUserStatusFilter(null);
+          }} />
+          <div className="period-data-table-overlay animate-in users-table-modal">
+            <div className="table-header">
+              <h3 className="table-title">👥 {userStatusFilter === 'active' ? 'Active' : 'Inactive'} Clients</h3>
+              <div className="table-header-right">
+                <span className="period-badge">
+                  {userStatusFilter === 'active' ? `${activeClientsCount} Active` : `${inactiveClientsCount} Inactive`}
+                </span>
+                <button className="close-table-btn" onClick={() => {
+                  setShowUsersTable(false);
+                  setUserStatusFilter(null);
+                }}>✕</button>
+              </div>
+            </div>
+            <div className="table-wrapper-custom">
+              {(() => {
+                const filteredClients = allClients.filter(client => {
+                  if (userStatusFilter === 'active') return client.status === 'Active';
+                  if (userStatusFilter === 'inactive') return client.status === 'Inactive';
+                  return true;
+                });
+
+                if (filteredClients.length === 0) {
+                  return (
+                    <div className="no-data-state">
+                      <div className="no-data-graphic" aria-hidden="true" />
+                      <div className="no-data-title">No {userStatusFilter === 'active' ? 'active' : 'inactive'} clients found</div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <table className="analytics-table users-table-overlay">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '10%', minWidth: '80px' }}>ID</th>
+                        <th style={{ width: '18%', minWidth: '120px' }}>Name</th>
+                        <th style={{ width: '15%', minWidth: '120px' }}>Phone</th>
+                        <th style={{ width: '12%', minWidth: '90px' }}>Role</th>
+                        <th style={{ width: '15%', minWidth: '110px' }}>Sub-Admin</th>
+                        <th style={{ width: '12%', minWidth: '100px' }}>Status</th>
+                        <th style={{ width: '18%', minWidth: '150px' }}>Created At</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredClients.map((client, idx) => (
+                        <tr key={client.id || idx}>
+                          <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.id || '—'}</td>
+                          <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.name || '—'}</td>
+                          <td className="muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.phone || '—'}</td>
+                          <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span className="badge">{client.role || 'Client'}</span></td>
+                          <td className="muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.subAdmin || 'N/A'}</td>
+                          <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span className={`status-badge ${client.status === 'Active' ? 'active' : 'inactive'}`}>
+                              {client.status === 'Active' ? '● Active' : '○ Inactive'}
+                            </span>
+                          </td>
+                          <td className="muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {client.createdAt 
+                              ? new Date(client.createdAt).toLocaleString('en-IN', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true
+                                })
+                              : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
           </div>
         </>,
         document.body

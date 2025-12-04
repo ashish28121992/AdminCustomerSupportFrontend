@@ -174,6 +174,7 @@ function Admin() {
 
       return {
         id: client.userId || client.id,
+        clientId: client.id || client._id, // Store actual client ID for API calls
         name: client.name || client.fullName || client.username || '—',
         email: client.email || client.contactEmail || '—',
         phone,
@@ -281,20 +282,24 @@ function Admin() {
         waLink: (newWaLink || '').trim(),
         permissions,
       };
-      // Debug: verify payload
-      console.log('POST /admins payload', payload);
       const res = await postJson('/admins', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res?.success && res?.data) {
-        // Reflect in UI list (prepend a lightweight row)
-        const newRow = {
+        // Map response data to match the structure used in the table
+        const newSubAdmin = {
+          id: res.data.id || res.data._id,
           admin: (res.data.branch && res.data.branch.branchName) || res?.data?.branchName || '—',
+          branchName: (res.data.branch && res.data.branch.branchName) || (res.data.branchSnapshot && res.data.branchSnapshot.name) || '—',
           username: res.data.username || res.data.email,
-          lastCreated: 'just now',
+          userId: res.data.userId || '',
+          isActive: Boolean(res.data.isActive),
+          branchWaLink: res.data.branchWaLink || res.data.waLink || (res.data.branchSnapshot && res.data.branchSnapshot.waLink) || (res.data.branch && res.data.branch.waLink) || '',
+          createdAt: res.data.createdAt || new Date().toISOString(),
         };
-        setSubAdmins((prev) => [newRow, ...prev]);
+        // Add to the beginning of the list for immediate UI update
+        setSubAdmins((prev) => [newSubAdmin, ...prev]);
         toast.success('Sub-admin created');
         setIsCreateOpen(false);
         setNewSubUsername('');
@@ -312,7 +317,6 @@ function Admin() {
       setFormError(msg);
       toast.error(msg);
     } catch (err) {
-      console.error('Create sub-admin error:', err);
       const msg = err?.message || 'Network error';
       setFormError(msg);
       toast.error(msg);
@@ -404,12 +408,151 @@ function Admin() {
         toast.error(msg);
       }
     } catch (err) {
-      console.error('Update sub-admin error:', err);
       const msg = err?.message || 'Network error';
       setUpdateError(msg);
       toast.error(msg);
     } finally {
       setIsUpdatingSub(false);
+    }
+  }
+
+  // Function to handle user/client deletion
+  async function handleDeleteUser(userId) {
+    try {
+      // Find the user in mappedClients to get the actual clientId
+      const user = mappedClients.find(u => u.id === userId);
+      if (!user) {
+        toast.error('User not found');
+        return;
+      }
+
+      // Check if user is already inactive/deactivated
+      if (user.status === 'Inactive') {
+        toast.error('Client already deactivated', {
+          icon: 'ℹ️',
+          style: {
+            background: '#6366f1',
+            color: '#fff',
+          },
+        });
+        return;
+      }
+
+      // Use clientId if available, otherwise fallback to userId
+      const clientId = user.clientId || userId;
+      if (!clientId) {
+        toast.error('Invalid client ID');
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      // Call DELETE API
+      const res = await deleteJson(`/clients/${clientId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res?.success) {
+        toast.success(res?.message || 'Client deactivated successfully');
+        
+        // Refresh clients list
+        try {
+          const clients = await fetchAllPages('/clients', token);
+          setAllClients(clients);
+          setTotalClientsCount(clients.length);
+        } catch (err) {
+          // Silent error handling for refresh
+        }
+      } else {
+        toast.error(res?.message || 'Failed to delete client');
+      }
+    } catch (err) {
+      const msg = err?.message || 'Network error';
+      toast.error(msg);
+    }
+  }
+
+  // Function to handle client deletion from sub-admin clients modal
+  async function handleDeleteClientFromModal(clientId) {
+    try {
+      if (!clientId) {
+        toast.error('Invalid client ID');
+        return;
+      }
+
+      // Find the client in selectedSubAdminClients to check status
+      const client = selectedSubAdminClients.find(c => (c.id || c._id || c.userId) === clientId);
+      if (client && !client.isActive) {
+        toast.error('User already deactivated', {
+          icon: 'ℹ️',
+          style: {
+            background: '#6366f1',
+            color: '#fff',
+          },
+        });
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      // Call DELETE API
+      const res = await deleteJson(`/clients/${clientId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res?.success) {
+        toast.success(res?.message || 'Client deactivated successfully');
+        
+        // Refresh clients list
+        try {
+          const clients = await fetchAllPages('/clients', token);
+          setAllClients(clients);
+          setTotalClientsCount(clients.length);
+          
+          // Also refresh the selected sub-admin clients list in modal
+          if (selectedSubAdmin) {
+            const updatedSubAdminClients = clients.filter(client => {
+              const clientParentId = typeof client.parentSubAdmin === 'object' 
+                ? String(client.parentSubAdmin?.id || '')
+                : String(client.parentSubAdmin || '');
+              const clientCreatorId = typeof client.createdBy === 'object'
+                ? String(client.createdBy?.id || '')
+                : String(client.createdBy || '');
+              const subAdminId = String(selectedSubAdmin.id || '');
+              
+              if (clientParentId && subAdminId && clientParentId === subAdminId) {
+                return true;
+              }
+              if (clientCreatorId && subAdminId && clientCreatorId === subAdminId) {
+                return true;
+              }
+              return false;
+            });
+            setSelectedSubAdminClients(updatedSubAdminClients);
+          }
+        } catch (err) {
+          // Silent error handling for refresh
+        }
+      } else {
+        toast.error(res?.message || 'Failed to delete client');
+      }
+    } catch (err) {
+      const msg = err?.message || 'Network error';
+      toast.error(msg);
     }
   }
 
@@ -445,7 +588,6 @@ function Admin() {
         if (currentPage > 100) break;
       }
     } catch (err) {
-      console.error(`Error fetching all pages from ${endpoint}:`, err);
       throw err;
     }
     
@@ -678,7 +820,6 @@ function Admin() {
       });
       setAnalyticsRows(normalized);
     } catch (err) {
-      console.error('Error loading analytics:', err);
       setAnalyticsRows([]);
     } finally {
       
@@ -697,7 +838,7 @@ function Admin() {
         setAllClients(clients);
         setTotalClientsCount(clients.length);
       } catch (err) {
-        console.error('Error fetching clients:', err);
+        // Silent error handling
       }
     })();
   }, []);
@@ -737,7 +878,6 @@ function Admin() {
       try {
         const token = getToken();
         const items = await fetchAllPages('/admins', token);
-        console.log("items",items)
         
         const mapped = items.map((it) => ({
           id: it.id || it._id,
@@ -751,7 +891,7 @@ function Admin() {
         }));
         setSubAdmins(mapped);
       } catch (e) {
-        console.error('Error fetching sub-admins:', e);
+        // Silent error handling
       }
     })();
   }, []);
@@ -794,6 +934,7 @@ function Admin() {
               timePeriod={timePeriod}
               analyticsData={analyticsRows}
               analyticsSummary={analyticsSummary}
+              allClients={mappedClients}
             />
           ) : section === 'users' ? (
             <UsersTable
@@ -803,7 +944,7 @@ function Admin() {
               onPageChange={(p) => setUsersPage(Math.min(Math.max(1, p), usersTotalPages))}
               query={usersQuery}
               onQueryChange={(q) => { setUsersQuery(q); setUsersPage(1); }}
-              onDelete={() => {}}
+              onDelete={handleDeleteUser}
             />
           ) : null}
 
@@ -872,6 +1013,7 @@ function Admin() {
         }}
         subAdmin={selectedSubAdmin}
         clients={selectedSubAdminClients}
+        onDelete={handleDeleteClientFromModal}
       />
 
       <ChangePasswordModal

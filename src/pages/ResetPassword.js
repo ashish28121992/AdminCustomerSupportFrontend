@@ -90,7 +90,6 @@ function ResetPassword() {
         });
       }
     } catch (error) {
-      console.error('Reset password error:', error);
       const msg = error?.message || 'Network error. Please try again.';
       setApiError(msg);
       toast.error(msg, {

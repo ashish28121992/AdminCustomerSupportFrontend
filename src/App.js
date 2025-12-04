@@ -1,6 +1,6 @@
 import './App.css';
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Admin from './pages/Admin';
@@ -10,7 +10,7 @@ import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -19,7 +19,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 

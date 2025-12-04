@@ -53,7 +53,6 @@ function ForgotPasswordModal({ open, onClose }) {
         toast.error(msg);
       }
     } catch (err) {
-      console.error('Forgot password error:', err);
       const msg = err?.message || 'Network error. Please try again.';
       setError(msg);
       toast.error(msg, {

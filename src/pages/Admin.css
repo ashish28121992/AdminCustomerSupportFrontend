@@ -768,6 +768,12 @@
   opacity: 1 !important;
 }
 
+/* Users table modal - wider for more columns */
+.users-table-modal {
+  max-width: 1200px !important;
+  width: 98% !important;
+}
+
 @keyframes modalSlideIn {
   from {
     opacity: 0;
@@ -836,9 +842,31 @@
 
 .table-wrapper-custom {
   overflow-x: auto;
+  overflow-y: visible;
   border-radius: 12px;
   border: 1px solid rgba(99, 102, 241, 0.15);
   background: rgba(15, 23, 42, 0.5);
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.table-wrapper-custom::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-wrapper-custom::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+}
+
+.table-wrapper-custom::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 4px;
+}
+
+.table-wrapper-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
 }
 
 /* Realtime summary bar */
@@ -979,6 +1007,148 @@
 .analytics-table th:nth-child(4),
 .analytics-table td:nth-child(4) {
   width: 25%;
+}
+
+/* Users table overlay specific styling */
+.users-table-overlay {
+  table-layout: fixed;
+  min-width: 100%;
+  width: 100%;
+}
+
+.users-table-overlay th,
+.users-table-overlay td {
+  padding: 0.9rem 0.8rem !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.users-table-overlay th {
+  font-size: 0.8rem !important;
+  word-break: keep-all;
+}
+
+.users-table-overlay td {
+  font-size: 0.9rem !important;
+}
+
+/* Mobile specific fixes for users table */
+@media (max-width: 768px) {
+  .users-table-modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 1rem !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    transform: translate(-50%, 0) !important;
+    max-height: 100vh !important;
+    height: 100vh !important;
+  }
+
+  .table-wrapper-custom {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .users-table-overlay {
+    table-layout: auto !important;
+    min-width: 800px !important;
+    width: auto !important;
+  }
+
+  .users-table-overlay th,
+  .users-table-overlay td {
+    padding: 0.7rem 0.6rem !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
+  .users-table-overlay th {
+    font-size: 0.7rem !important;
+    padding: 0.6rem 0.5rem !important;
+  }
+
+  .users-table-overlay th:nth-child(1),
+  .users-table-overlay td:nth-child(1) {
+    min-width: 70px;
+    width: 70px;
+  }
+
+  .users-table-overlay th:nth-child(2),
+  .users-table-overlay td:nth-child(2) {
+    min-width: 100px;
+    width: 120px;
+  }
+
+  .users-table-overlay th:nth-child(3),
+  .users-table-overlay td:nth-child(3) {
+    min-width: 110px;
+    width: 130px;
+  }
+
+  .users-table-overlay th:nth-child(4),
+  .users-table-overlay td:nth-child(4) {
+    min-width: 80px;
+    width: 90px;
+  }
+
+  .users-table-overlay th:nth-child(5),
+  .users-table-overlay td:nth-child(5) {
+    min-width: 100px;
+    width: 120px;
+  }
+
+  .users-table-overlay th:nth-child(6),
+  .users-table-overlay td:nth-child(6) {
+    min-width: 90px;
+    width: 100px;
+  }
+
+  .users-table-overlay th:nth-child(7),
+  .users-table-overlay td:nth-child(7) {
+    min-width: 140px;
+    width: 160px;
+  }
+
+  .table-header {
+    padding-bottom: 0.75rem;
+  }
+
+  .table-title {
+    font-size: 1.1rem !important;
+  }
+
+  .period-badge {
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.7rem !important;
+  }
+
+  .close-table-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .users-table-overlay {
+    min-width: 700px !important;
+  }
+
+  .users-table-overlay th,
+  .users-table-overlay td {
+    padding: 0.6rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .users-table-overlay th {
+    font-size: 0.65rem !important;
+    padding: 0.5rem 0.4rem !important;
+  }
 }
 
 .analytics-table thead {

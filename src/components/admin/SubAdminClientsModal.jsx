@@ -1,7 +1,15 @@
 import React from 'react';
 
-function SubAdminClientsModal({ open, onClose, subAdmin, clients }) {
+function SubAdminClientsModal({ open, onClose, subAdmin, clients, onDelete }) {
   if (!open || !subAdmin) return null;
+
+  const handleDelete = (client) => {
+    // Use client.id or client._id or client.userId as the clientId for deletion
+    const clientId = client.id || client._id || client.userId;
+    if (clientId && onDelete) {
+      onDelete(clientId);
+    }
+  };
 
   return (
     <div className="modal-backdrop blur-backdrop" onClick={onClose}>
@@ -25,11 +33,12 @@ function SubAdminClientsModal({ open, onClose, subAdmin, clients }) {
               <table className="clients-modal-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '22%' }}>Name</th>
-                    <th style={{ width: '18%' }}>User ID</th>
-                    <th style={{ width: '18%' }}>Phone</th>
-                    <th style={{ width: '12%' }}>Status</th>
-                    <th style={{ width: '30%' }}>WhatsApp Link</th>
+                    <th style={{ width: '18%' }}>Name</th>
+                    <th style={{ width: '15%' }}>User ID</th>
+                    <th style={{ width: '15%' }}>Phone</th>
+                    <th style={{ width: '10%' }}>Status</th>
+                    <th style={{ width: '25%' }}>WhatsApp Link</th>
+                    <th style={{ width: '17%' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -51,6 +60,9 @@ function SubAdminClientsModal({ open, onClose, subAdmin, clients }) {
                         ) : (
                           <span className="muted">—</span>
                         )}
+                      </td>
+                      <td>
+                        <button className="btn-danger" onClick={() => handleDelete(client)}>Delete</button>
                       </td>
                     </tr>
                   ))}
